@@ -43,7 +43,10 @@ echo $contents; } ?>
 
 <!-- end of project description -->
 
-<p> No content added. </p>
+
+<p> Reference material </p>
+
+<p class="text">Bayesian Generalized Linear Regression <a HREF="BGLR.pdf">Download</a></p>
 
 <p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
 
