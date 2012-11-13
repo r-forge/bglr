@@ -1,0 +1,14 @@
+\name{mouse.X}
+\alias{mouse.X}
+\title{Molecular markers}
+\description{
+
+ Is a matrix (1822 x 10946) with SNP markers.
+
+}
+
+\source{
+  \url{http://gscan.well.ox.ac.uk}
+}
+
+\keyword{datasets}

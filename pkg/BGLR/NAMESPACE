@@ -1,0 +1,6 @@
+useDynLib(BGLR)
+export(BGLR,BLR,plot.BGLR,predict.BGLR)
+
+S3method(plot, BGLR)
+S3method(predict, BGLR)
+

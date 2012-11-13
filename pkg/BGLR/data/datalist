@@ -1,0 +1,2 @@
+mouse: mouse.A mouse.ID mouse.X mouse.cageID mouse.y
+wheat: wheat.A wheat.X wheat.Y wheat.sets

@@ -1,0 +1,25 @@
+version 1.0 (2012-10-01)
+  
+  It starts as a copy of BLR version 1.3
+  
+  major changes, new list interface, models added for continuous, discrete and 
+  censored traits. 
+  
+  For continuous traits:
+  
+  -Bayes A
+  -Bayes B
+  -Bayes C-pi
+  -RKHS (reproducing kernel Hilbert spaces)
+  
+  For discrete traits
+  
+  -Binary responses
+  -Ordinal responses
+  
+  This version will be incompatible with the previous releases, 
+  because it was necessary to make major changes to the computing routines.
+  
+  This version will allow to use the hardware more efficiently. In UNIX-like 
+  operating systems it uses OpenMP (http://en.wikipedia.org/wiki/OpenMP, http://wwww.openmp.org)
+  to perform the computations. 
