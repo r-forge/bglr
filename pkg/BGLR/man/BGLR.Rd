@@ -8,28 +8,27 @@
   were presented in de los Campos \emph{et al.} (2009, 2010).
 }
 \usage{
+  BGLR(y, family = "gaussian", ETA = NULL, nIter = 1500,
+       burnIn = 500, thin = 5, saveAt = "", S0 = NULL, 
+       df0 =5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL,
+       ncores = 1, verbose = TRUE, rmExistingFiles = TRUE)
 
-   BGLR(y,response_type='gaussian',
-               ETA=list(list(X=NULL,model='')),
-               nIter=1500,burnIn=500,thin=3,
-               saveAt='',Se=NULL,dfe=1,
-               minAbsBeta = 1e-09,
-               weights=NULL,
-               R2=0.5,ncores=1)
 }
 \arguments{
    \item{y}{(numeric, \eqn{n}{n}) the data-vector (NAs allowed).}
-   \item{response_type}{string, specify the distribution of the response variable, right now only gaussian responses are allowed.}
+   \item{family}{string, specify the distribution of the response variable, right now only gaussian responses are allowed.}
    \item{ETA}{A list of predictors and prior specifications for the regression coefficients. For example the prior for the 
              regression coefficients can be that used in Bayesian LASSO, Bayesian ridge regression, BayesA, BayesB, BayesC-pi, Elastic Net LASSO, etc. See details below.}
    \item{weights}{(numeric, \eqn{n}{n}) a vector of weights, may be NULL.}
    \item{nIter,burnIn, thin}{(integer) the number of iterations, burn-in and thinning.}
    \item{saveAt}{(string) this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.}
    \item{ncores}{Number of cpu's used in computations,default 1.}
-   \item{Se}{The scale parameter for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
-   \item{dfe}{The degrees of freedom for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
+   \item{S0}{The scale parameter for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
+   \item{df0}{The degrees of freedom for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{R2}{...}
    \item{minAbsBeta}{The minimum absolute value of the components of \eqn{\boldsymbol \beta_L}{bL} to avoid numeric problems when sampling from \eqn{\boldsymbol \tau^2}, default \eqn{1 \times 10^{-9}}{1e-9}.}
+   \item{verbose}{logical, if TRUE prints iteration history.}
+   \item{rmExistingFiles}{logical, if TRUE removes existing output files from previous runs.}
 }
 
 \details{
@@ -38,11 +37,16 @@ The program run a Gibbs sampler for the regression model given below.
 
 \bold{Likelihood}. The equation for the data is:
 
+%                             __ Hbeta                   __ Hu          
+%y =   1 mu  +  X   beta   +  \          X    beta    +  \          u   + e 
+%                F      F     /__ h = 1   Rh      Rh     /__ h = 1   h 
+
 \deqn{
  \begin{array}{lr}
  \boldsymbol y= \boldsymbol 1 \mu + \boldsymbol X_F \boldsymbol \beta_F + \sum_{h=1}^{H\beta} \boldsymbol X_{Rh} \boldsymbol \beta_{Rh} + \sum_{h=1}^{Hu} \boldsymbol u_h + \boldsymbol \varepsilon & (1)
  \end{array}
 }{y=1*mu + XF*bF + sum(XR[h]*bR[h],h) + sum(u[h],h) + e ...(1)}
+
 
 where \eqn{\mu}{mu} is an effect common to all individuals, \eqn{\boldsymbol X_F=\{ x_{Fij} \}}{XF} 
 represent covariates whose effects \eqn{\boldsymbol \beta_{F}=\{\beta_{Fij}\}}{bF} will be estimated 
@@ -99,7 +103,7 @@ Collecting assumptions we have:
              & \times \left\{ \prod_{h=1}^{Hu} N(\boldsymbol u_h | \boldsymbol 0, \sigma_{uh}^2 \boldsymbol K_{uh}) \chi^{-2} (\sigma_{uh}^2 | S_{uh},df_{uh}) \right\} \\
              & \times \chi^{-2} (\sigma^2 | df, S)
   \end{array}
-}
+}{p(mu,bF,bR[1],...,bR[Hb],u[1],...,u[Hu],sigma^2) propto prod(prod(p(bR[hj]|thetaR[h]),j)p(thetaR[h]),h) * prod(N(u[h]|0,sigma[uh]^2*K[uh]) * Inv_Scaled_chisq(sigma[uh]^2 | S[uh],df[uh]),h) * Inv_Scaled_chisq(sigma^2| df, S)} 
 
 \bold{Special cases}
 
