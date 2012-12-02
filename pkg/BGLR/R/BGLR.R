@@ -893,13 +893,13 @@ BGLR=function(y,family="gaussian",
 			tmp<-which(names(ETA[[i]])%in%c('post_b','post_b2'))
 			ETA[[i]]<-ETA[[i]][-tmp]
 			
-			if(ETA[[i]]$model%in%c('BRR','BayesA','BayesC')){ # Need to complete this part
-				ETA[[i]]$varB<-ETA[[i]]$post_varB
-				ETA[[i]]$SD.varB<-ETA[[i]]$post_varB2-(ETA[[i]]$post_varB^2)
-				tmp<-which(names(ETA[[i]])%in%c('post_varB','post_varB2'))
-				ETA[[i]]<-ETA[[i]][-tmp]
-				
-			}
+			#if(ETA[[i]]$model%in%c('BRR','BayesA','BayesC')){ # Need to complete this part
+			#	ETA[[i]]$varB<-ETA[[i]]$post_varB
+			#	ETA[[i]]$SD.varB<-ETA[[i]]$post_varB2-(ETA[[i]]$post_varB^2)
+			#	tmp<-which(names(ETA[[i]])%in%c('post_varB','post_varB2'))
+			#	ETA[[i]]<-ETA[[i]][-tmp]
+			#	
+			#}
 		}
 		out$ETA=ETA
 	}

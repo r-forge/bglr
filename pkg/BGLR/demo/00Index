@@ -1,7 +1,7 @@
 BL		Bayesian LASSO
 BRR		Bayesian Ridge Regression
 RKHS		Reproducing kernel Hibert space
-BayesCpi	BayesC-pi
+BayesC		BayesC-pi
 BA		BayesA
 BB		BayesB
 BEN		Bayesian Elastic Net LASSO

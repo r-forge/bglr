@@ -29,10 +29,10 @@ nIter=500;
 burnIn=100;
 thin=3;
 saveAt='';
-Se=NULL;
+S0=NULL;
 weights=NULL;
 R2=0.5;
-ETA<-list(list(X=X,model='BayesCpi'))
+ETA<-list(list(X=X,model='BayesC'))
   
-fit_BCpi=BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,dfe=5,Se=Se,weights=weights,R2=R2)
-plot(fit_BCpi$yHat,y)
+fit_BC=BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,df0=5,S0=S0,weights=weights,R2=R2)
+plot(fit_BC$yHat,y)
