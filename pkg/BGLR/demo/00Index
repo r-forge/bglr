@@ -5,3 +5,4 @@ BayesC		BayesC-pi
 BA		BayesA
 BB		BayesB
 BEN		Bayesian Elastic Net LASSO
+read_bed	Read bed file
