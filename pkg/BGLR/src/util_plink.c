@@ -111,3 +111,155 @@ void read_ped(char **ped_file)
                 error("It was not possible to open %s",ped_file[0]);
         }
 }
+
+
+/*
+ Bed format,
+  
+ http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml
+
+ The first 3 bytes have a special meaning. The first two are fixed, a 
+ 'magic number' that enables PLINK to confirm that a BED file is really 
+ a BED file. That is, BED files should always start 01101100 00011011. 
+ The third byte indicates whether the BED file is in SNP-major or 
+ individual-major mode: a value of 00000001 indicates SNP-major (i.e. list 
+ all individuals for first SNP, all individuals for second SNP, etc) 
+ whereas a value of 00000000 indicates individual-major 
+ (i.e. list all SNPs for the first individual, list all SNPs for 
+ the second individual, etc)
+
+ 01101100=0x6c
+ 00011011=0x1b
+ 00000001=0x01
+
+ use the xxd command to view the binary file
+ 
+ Example:
+
+ $xxd sample.bed
+ 
+ 0000000: 6c1b 01fa ff57 bfab ffff effe bffe ffff  l....W..........
+ 
+ $xxd -b sample.bed
+ 
+ 0000000: 01101100 00011011 00000001 11111010 11111111 01010111  l....W
+
+
+For the genotype data, each byte encodes up to four genotypes (2 bits per genoytpe). The coding is
+     00  Homozygote "1"/"1"
+     01  Heterozygote
+     11  Homozygote "2"/"2"
+     10  Missing genotype
+
+The only slightly confusing wrinkle is that each byte is effectively read backwards. That is, if we label each of the 8 position as A to H, we would label backwards:
+
+     01101100
+     HGFEDCBA
+
+and so the first four genotypes are read as follows:
+
+     01101100
+     HGFEDCBA
+
+           AB   00  -- homozygote (first)
+         CD     11  -- other homozygote (second)
+       EF       01  -- heterozygote (third)
+     GH         10  -- missing genotype (fourth)
+Finally, when we reach the end of a SNP (or if in individual-mode, the end of an individual) we skip to the start of a new byte (i.e. skip any remaining bits in that byte).
+It is important to remember that the files test.bim and test.fam will already have been read in, so PLINK knows how many SNPs and individuals to expect.
+
+The routine will return a vector of dimension n*p, with the snps stacked. The vector contains integer codes:
+
+Int code	Genotype	
+0		00
+1		01
+2		10
+3		11
+
+Recode snp to 0,1,2 Format using allele "1" as reference
+
+0 --> 0
+1 --> 1
+2 --> NA
+3 --> 2
+
+*/
+
+void read_bed(char **bed_file, int *n, int *p, int *out)
+{
+ 	FILE *input;
+        unsigned char magic[3];   // First three bytes in the file
+        int nbyte,i,j,k,l,bytes_read;
+	char *buffer=NULL;
+        unsigned char c;
+        const unsigned char recode[4] = {'0', '2', '1', '3'};
+  	const unsigned char mask = '\x03';
+        unsigned char code;
+
+        input=fopen(bed_file[0],"rb");
+
+        if(input!=NULL)
+        {
+           
+           if(fread(magic,1,3,input)!=3)
+           {
+             	error("Unable to read the first 3 bytes in %s ", bed_file[0]);
+           }else{
+             	if(magic[0]!='\x6C' || magic[1]!='\x1B') error("%s file is not a valid .bed file (%X, %X), magic number error\n", bed_file[0],magic[0], magic[1]);
+             	if(magic[2]!='\x01' && magic[2]!='\x00') error("only snp and individual major order are supported\n");
+           }
+           
+           if(magic[2]=='\x01')
+           {
+              	Rprintf("Start reading in snp major order...\n");
+		nbyte=1+(*n-1)/4;
+                Rprintf("Number of bytes = %d \n",nbyte);
+                Rprintf("Hex dump\n");
+
+                buffer = (char *) malloc(nbyte);                 
+                
+                if(buffer!=NULL)
+                {
+                        //Loop over SNPs
+                        for(j=0; j<*p;j++)
+                        {
+                                bytes_read=fread(buffer,1,nbyte,input);
+                                if(bytes_read==nbyte) 
+                                {
+                                        //Loop over individuals
+                                        l=-1;
+					for(i=0; i<nbyte;i++)
+                                        {
+                                          c=buffer[i];
+                                          Rprintf("%x ",c);
+                                          for(k=0; k<4;k++)
+                                          {
+                                                 l++;
+                                                 code = c & mask;
+                                                 c=c>>2; 
+                                                 //Some pices of information are meaningless if the number of individuals IS NOT a multiple of 4
+                                                 if(l<(*n))    
+                                                 {
+                                                    //Rprintf("%c",recode[code]);
+                                                    out[l+j*(*n)]=recode[code]-'0';
+                                                 }
+                                          }
+                                          Rprintf(" ");
+                                        }
+                                        Rprintf("\n");
+                                }else{
+                                        error("Unexpected number of bytes read from %s, expecting: %d, read: %d",bed_file[0],nbyte,bytes_read);
+                                }
+                        } 
+                }else{
+                        error("Unable to allocate memory for buffer in read_bed\n");
+                }
+           }
+           if(magic[2]=='\x00')
+           {
+		error("Individual major order not yet implemented"); 
+           }  
+       }else{
+	     	error("It was not possible to open %s", bed_file[0]);
+      }
+}
