@@ -1,0 +1,12 @@
+
+version 1.1 (2010-04-08):
+  first public release and distribution via WWW
+  
+
+version 1.2 (2010-08-23)
+  bug fix, an error in the C routine was affecting residual variances estimation in 
+  Ridge Regression and models including pedigree.
+
+version 1.3 (2012-03-18)
+  minor modifications to build without warnings in R-2.15.0
+

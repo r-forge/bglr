@@ -1,0 +1,16 @@
+18810669f13b87348459e611d31ab760 *COPYING
+25ae402752e7371a2d3d4bec1a60ec9c *DESCRIPTION
+75609d66724b38d87607225a987bf2c9 *NAMESPACE
+fcb42ad986cf0dcbbe4c534370ee7f49 *R/BLRw_c.R
+128879e7e713aaa3e90cfc34ad62aa15 *data/wheat.RData
+27cbe0374e44fa3b29771caec6c760dd *demo/00Index
+8c8c86c542ac27e82126fc060a9c8c1e *demo/cross_validation.R
+5e42d99a2cfb3ebcf1344a9b8a8c753e *demo/fit_bL.R
+f0edd21367bd5baadea51ff7250a5d0d *history.txt
+8b355f571eba299b197a5b289768b741 *man/A.Rd
+3796b78db18e956d303f2f57ddb27e5b *man/BLR.Rd
+87e3b49bf2794d48b7cc870e5db63579 *man/X.Rd
+a1d495f0a67055d537d1db927f2f7173 *man/Y.Rd
+be6cebd6de299444ecf64ff5a5dbb4cf *man/sets.Rd
+73c726f8ed410e88b1888c8c667f890e *man/wheat.Rd
+0a508223e1187d773b5811614fc15ae1 *src/sample_betas.c
