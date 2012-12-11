@@ -165,6 +165,7 @@ and so the first four genotypes are read as follows:
          CD     11  -- other homozygote (second)
        EF       01  -- heterozygote (third)
      GH         10  -- missing genotype (fourth)
+
 Finally, when we reach the end of a SNP (or if in individual-mode, the end of an individual) we skip to the start of a new byte (i.e. skip any remaining bits in that byte).
 It is important to remember that the files test.bim and test.fam will already have been read in, so PLINK knows how many SNPs and individuals to expect.
 
@@ -185,7 +186,7 @@ Recode snp to 0,1,2 Format using allele "1" as reference
 
 */
 
-void read_bed(char **bed_file, int *n, int *p, int *out)
+void read_bed(char **bed_file, int *n, int *p, int *out, int *verbose)
 {
  	FILE *input;
         unsigned char magic[3];   // First three bytes in the file
@@ -193,7 +194,7 @@ void read_bed(char **bed_file, int *n, int *p, int *out)
 	char *buffer=NULL;
         unsigned char c;
         const unsigned char recode[4] = {'0', '2', '1', '3'};
-  	const unsigned char mask = '\x03';
+  	const unsigned char mask = '\x03'; //This corresponds to 00000011 
         unsigned char code;
 
         input=fopen(bed_file[0],"rb");
@@ -211,10 +212,10 @@ void read_bed(char **bed_file, int *n, int *p, int *out)
            
            if(magic[2]=='\x01')
            {
-              	Rprintf("Start reading in snp major order...\n");
+              	if(*verbose) Rprintf("Start reading in snp major order...\n");
 		nbyte=1+(*n-1)/4;
-                Rprintf("Number of bytes = %d \n",nbyte);
-                Rprintf("Hex dump\n");
+                if(*verbose) Rprintf("Number of bytes/snp = %d \n",nbyte);
+                if(*verbose) Rprintf("Hex dump by snp \n");
 
                 buffer = (char *) malloc(nbyte);                 
                 
@@ -228,38 +229,115 @@ void read_bed(char **bed_file, int *n, int *p, int *out)
                                 {
                                         //Loop over individuals
                                         l=-1;
+                                        if(*verbose) Rprintf("%d\t: ",j+1);
 					for(i=0; i<nbyte;i++)
                                         {
                                           c=buffer[i];
-                                          Rprintf("%x ",c);
+                                          if(*verbose) Rprintf("%x ",c);
                                           for(k=0; k<4;k++)
                                           {
                                                  l++;
                                                  code = c & mask;
-                                                 c=c>>2; 
+                                                 c=c>>2;  //Right shift (two bits)
                                                  //Some pices of information are meaningless if the number of individuals IS NOT a multiple of 4
+                                                 //at the end of the snp
                                                  if(l<(*n))    
                                                  {
                                                     //Rprintf("%c",recode[code]);
                                                     out[l+j*(*n)]=recode[code]-'0';
                                                  }
                                           }
+                                          if(*verbose){
                                           Rprintf(" ");
+                                          if((i+1)%16==0) 
+                                          {
+                                          	Rprintf("\n");
+                                                Rprintf("\t: ");
+                                          }}
                                         }
-                                        Rprintf("\n");
+                                        if(*verbose) Rprintf("\n");
                                 }else{
                                         error("Unexpected number of bytes read from %s, expecting: %d, read: %d",bed_file[0],nbyte,bytes_read);
                                 }
-                        } 
+                        }
+			free(buffer); 
+  			fclose(input);
                 }else{
                         error("Unable to allocate memory for buffer in read_bed\n");
                 }
            }
            if(magic[2]=='\x00')
            {
-		error("Individual major order not yet implemented"); 
+		error("Individual major order not implemented yet"); 
            }  
        }else{
 	     	error("It was not possible to open %s", bed_file[0]);
       }
 }
+
+/*
+
+This rountine write a BED file in snp major order
+
+The routine recibe a vector of dimension n*p, with the snps stacked. 
+The vector contains integer codes:
+
+Int code        Genotype        
+0               00
+1               01
+2               10
+3               11
+
+*/
+
+void write_bed(char **bed_file, int *n, int *p, int *out)
+{
+	FILE *output;
+        const unsigned char recode[4] = {0x00, 0x02, 0x01, 0x03};
+        unsigned char byte,mask; 
+        int i,j,l;
+
+        output=fopen(bed_file[0],"wb");
+        
+        if(fopen!=NULL)
+        {		
+                /*
+                Write the magic number
+                */
+                fputc(0x6C, output); 
+                fputc(0x1B, output);
+                 
+                /* 
+                 Order, 
+                 right now only SNP major order is supported 
+                */
+                fputc(0x01, output);
+
+   		//Loop over SNPs
+                for(j=0; j<*p;j++)
+                {
+			//Loop over individuals, 
+                        byte=0x00;
+                        l=-1;
+                        for(i=0; i<*n; i++)
+                        { 
+                                l++;
+                                mask=recode[out[i+j*(*n)]] << 2 * l;
+                                byte = byte | mask ;
+                                if((i+1)%4==0)
+                                {
+                                   fputc(byte,output);
+                                   byte=0x00;
+                                   l=-1;
+                                }
+                        }
+                        //This includes n<4 or n that is not multiple of 4
+                        if((*n)%4!=0) fputc(byte,output);
+		}       
+                fclose(output);
+                
+        }else{
+		error("It was not possible to open %s", bed_file[0]);
+       }
+}
+

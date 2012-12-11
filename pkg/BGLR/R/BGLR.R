@@ -103,8 +103,15 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     if(is.null(LT$R2)){ LT$R2<-R2/nLT}
 	
     # Setting default value of lambda
-    if(!is.null(LT$lambda)){ if(LT$lambda<0){stop("lambda should be positive\n")}  };
-    if(is.null(LT$lambda)){
+    if(!is.null(LT$lambda))
+    { 
+    	if(LT$lambda<0)
+        {
+		stop("lambda should be positive\n")
+	}  
+    }
+    if(is.null(LT$lambda))
+    {
 		LT$lambda2=2*(1-R2)/(LT$R2)*LT$MSx
 		LT$lambda=sqrt(LT$lambda2)
 		cat(paste('  Initial value of lambda in LP ',j,' was set to default value (',LT$lambda,')\n',sep=''))
