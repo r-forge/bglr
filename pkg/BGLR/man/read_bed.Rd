@@ -51,6 +51,9 @@ Gustavo de los Campos, Paulino Perez Rodriguez,
 
 \dontrun{
 
+library(BGLR)
+demo(read_bed)
+
 }
 
 }

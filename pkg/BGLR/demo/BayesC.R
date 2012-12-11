@@ -1,7 +1,7 @@
 rm(list=ls())
 
 setwd(tempdir())
-library(BGLR) 
+ 
 data(wheat) 
 
 n<-599   # should be <= 599

@@ -1,4 +1,3 @@
-library(BGLR)
 
 bed_file = system.file("extdata/sample.bed", package="BGLR")
 

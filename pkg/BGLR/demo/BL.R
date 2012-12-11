@@ -2,7 +2,7 @@
 
 rm(list=ls())
 setwd(tempdir())
-library(BGLR)
+
 data(wheat)
 set.seed(12345)
 varB<-0.5*(1/sum(apply(X=wheat.X,MARGIN=2,FUN=var)))
