@@ -1,5 +1,8 @@
 #include <stdio.h>
+#include <string.h>
 #include <R.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
 
 /*
   This function reads an arbitrary long line from a text file
@@ -89,27 +92,196 @@ WARNING: the ped_file should be absolute
          use normalizeaPath in R to avoid problems 
 */
 
-void read_ped(char **ped_file)
+/*
+FIXME: 	Free allocated memory for temporary objects
+	Better way to know the number of individuals ans snps
+	Better way to know allele one and allele two
+	Detect snps that are non biallelic
+*/
+
+SEXP read_ped(SEXP Ped)
 {
 	FILE *input;
         char *Line;
+        char *Line_copy;
+        char *allele_one;
+        char *allele_two;
+        char *token=NULL;
         int count=0;
         int nchar;
+        int n=0; 
+        int p=0;
+        int i;
+        char tmp;
+        int ans;
+	int *px;
+	SEXP x, snps, individuals,list, list_names;
+	char *names[3] = {"x", "n","p"};
 
-  	input=fopen(ped_file[0],"r");
-      
+
+        const char *ped_file = CHAR(STRING_ELT(Ped, 0));
+
+  	input=fopen(ped_file,"r");
+        
+        //First read the file to determine the number of rows and the number of 
+        //individuals and the number of snps
+
         if(input!=NULL)
         {
                 while(!feof(input))
                 {
                         count++;
 			Line=read_string(input,&nchar);
-                        if(nchar>=0) Rprintf("%d \t %d \t %s\n",count,nchar,Line);
+                        if(nchar>=0) 
+                        {
+                          n++;
+                          //Rprintf("%d \t %d \t %s\n",count,nchar,Line);
+                          if(n==1)
+                          {
+				Line_copy=(char *) malloc(nchar+1);
+
+                                if(Line_copy==NULL) error("Unable to allocate memory for Line_copy in read_ped");
+
+                                strcpy(Line_copy,Line);
+
+				token=strtok(Line,"\t ");
+                                if(token==NULL) 
+                                { 
+					error("Input file is not separated by tab or space");
+           			}
+                                else
+                                {
+					while(token!=NULL)
+                                        {
+						token=strtok(NULL,"\t ");
+						p++;
+					}
+                                        if((p-6)%2!=0)
+                                        {
+						error("Unexpected number of fields in  %s\n",ped_file);
+                                        }else{
+					    p=(p-6)/2;                       
+                                        }
+				}
+                          }
+                        }
 		}
+                //Rprintf("Number os snps=%d\n",p);
+                //Rprintf("Number of individuals=%d\n",n);
                 fclose(input);
         }else{
-                error("It was not possible to open %s",ped_file[0]);
+                error("It was not possible to open %s",ped_file);
         }
+        
+        PROTECT(x = NEW_INTEGER(n*p));
+	px=INTEGER_POINTER(x);
+        allele_one = (char *) malloc(p);
+        allele_two = (char *) malloc(p);
+	
+	if(allele_one==NULL) error("Unable to allocate memory for allele_one in read_ped\n");
+	if(allele_two==NULL) error("Unable to allocate memory for allele_two in read_bed\n");
+
+	       
+	//Reopen the file again and populate out vector
+        input=fopen(ped_file,"r");
+        if(input!=NULL)
+        {
+		//Obtain and store allele one and allele two
+		//Skip first six columns 
+		token=strtok(Line_copy,"\t ");
+		for(i=0; i<(6-1);i++) 
+		{
+		   token=strtok(NULL,"\t ");
+		}
+		
+		for(i=0; i<(2*p);i++)
+		{
+		   token=strtok(NULL,"\t ");	
+		   //Rprintf("%d=%c\n",i/2,token[0]);
+		   if((i+1)%2==1)
+		   {
+		     allele_one[i/2]=token[0];
+		   }else{
+		     allele_two[i/2]=token[0];
+		   }
+		}
+		
+		count=-1;
+
+		while(!feof(input))
+		{
+			Line=read_string(input,&nchar);
+			if(nchar>=0)
+			{
+				count++;
+				//Rprintf("%d\n",count);
+				token=strtok(Line,"\t ");
+				for(i=0;i<(6-1);i++) token=strtok(NULL,"\t ");
+				for(i=0;i<(2*p);i++)
+				{
+					token=strtok(NULL,"\t ");
+					if((i+1)%2==1)
+					{
+						tmp=token[0];
+					}else{
+						//We have all the information and we are able to decide if we have a homocigous, heterocigous or missing value
+						if(allele_one[i/2]==allele_two[i/2] && token[0]!='0') allele_two[i/2]=token[0];
+
+						if(tmp=='0' && token[0]=='0')
+						{
+							//Rprintf("Missing value\n");
+							ans=2;
+						}else{
+							if(tmp!=token[0])
+							{
+								//Rprintf("%c%c Heterocigous\n",tmp,token[0]);
+								ans=1;
+							}
+							if(tmp==token[0]) 
+							{
+								if(tmp==allele_one[i/2]) 
+								{
+									//Rprintf("%c%c Homocigous recesive\n",tmp,token[0]);
+									ans=0;
+								}else{
+									//Rprintf("%c%c Homocigous dominant\n",tmp,token[0]);
+									ans=3;
+								} 
+							}
+						}
+						//Rprintf("%d\n",ans);
+						px[count+(i/2)*(n)]=ans;
+					}
+				}	
+			}
+		} 
+		fclose(input);       
+        }else{
+		error("It was not possible to open %s",ped_file);
+        } 
+
+	PROTECT(individuals=allocVector(INTSXP,1));
+	INTEGER(individuals)[0]=n;
+
+	PROTECT(snps=allocVector(INTSXP,1));
+        INTEGER(snps)[0]=p;
+
+	PROTECT(list = allocVector(VECSXP, 3)); 
+	
+	//Attaching elements to the list
+	SET_VECTOR_ELT(list, 0, x);
+	SET_VECTOR_ELT(list, 1, individuals);
+	SET_VECTOR_ELT(list, 2, snps);	
+
+	//List names
+	PROTECT(list_names = allocVector(STRSXP,3));
+	for(i = 0; i < 3; i++) SET_STRING_ELT(list_names,i,mkChar(names[i])); 
+	setAttrib(list, R_NamesSymbol, list_names);
+
+	UNPROTECT(5);
+
+	//Return the goodies 
+	return(list);	
 }
 
 
@@ -340,4 +512,3 @@ void write_bed(char **bed_file, int *n, int *p, int *out)
 		error("It was not possible to open %s", bed_file[0]);
        }
 }
-

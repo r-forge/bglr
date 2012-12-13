@@ -26,7 +26,7 @@
    \item{S0}{The scale parameter for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{df0}{The degrees of freedom for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{R2}{...}
-   \item{minAbsBeta}{The minimum absolute value of the components of \eqn{\boldsymbol \beta_L}{bL} to avoid numeric problems when sampling from \eqn{\boldsymbol \tau^2}, default \eqn{1 \times 10^{-9}}{1e-9}.}
+   \item{minAbsBeta}{The minimum absolute value of the components of \eqn{\boldsymbol \beta_L}{bL} to avoid numeric problems when sampling from \eqn{\boldsymbol \tau^2}{\tau^2}, default \eqn{1 \times 10^{-9}}{1e-9}.}
    \item{verbose}{logical, if TRUE prints iteration history.}
    \item{rmExistingFiles}{logical, if TRUE removes existing output files from previous runs.}
 }
@@ -114,11 +114,11 @@ unknown variance. This can be impemented by setting
 
 \deqn{
        p(\boldsymbol \beta_{Rh} | \boldsymbol \theta_{Rh}) = \left\{ \prod_{j=1}^{p_{Rh}} N(\beta_{Rhj} | 0, \sigma_{\beta h}^2) \right\} \chi^{-2} (\sigma_{\beta h}^2 | df_{\beta h}, S_{\beta h}).
-     }
+     }{p(beta[Rh]| theta[Rh])=prod(N(beta[Rhj]|0,sigma[beta h]^2),j) * Inv_Scaled_chisq(sigma[beta h]^2 | df[beta h], S[beta h])}
 
-When \eqn{\sigma_{\beta h}^2} is known, using this prior yield estimates which are equivalent to those of a RR. In a BGR the excent of 
-shrinkage is controlled by the variance (or noise-to-signal) ratio \eqn{\lambda_h=\sigma_e^2/\sigma_{\beta h}^2}. This quantity is the 
-same for all regression coefficients included in \eqn{\boldsymbol \beta_{Rh}}; this may not be appropiate if some markers are located
+When \eqn{\sigma_{\beta h}^2}{sigma[beta h]^2} is known, using this prior yield estimates which are equivalent to those of a RR. In a BGR the excent of 
+shrinkage is controlled by the variance (or noise-to-signal) ratio \eqn{\lambda_h=\sigma_e^2/\sigma_{\beta h}^2}{lambda[h]=sigma[e]^2/sigma[beta h]^2}. 
+This quantity is the same for all regression coefficients included in \eqn{\boldsymbol \beta_{Rh}}{beta[Rh]}; this may not be appropiate if some markers are located
 in regions harboring QTL while others are located in regions which are not associated to genetic variance. To overcome this problem, 
 alternative shrinkage procedures such as those described below can be used.
 
@@ -133,20 +133,20 @@ of the form
 
 \deqn{
        p(\beta_{Rhj} | H) = \int N(\beta_{Rhj} | 0, \sigma_{\beta hj}^2) p(\sigma_{\beta hj}^2 | H)  \partial \sigma_{\beta_hj}^2
-    }
+    }{p(beta[Rhj]| H)= Integrate(N(beta[Rhj]|0,sigma[beta hj]^2)) * p(sigma[beta hj]^2 | H) d sigma[beta hj]^2}
 
-where \eqn{\sigma_{\beta hj}^2} is a marker-specific variance parameter, 
-\eqn{p(\sigma_{\beta hj}^2 | H)} is a prior density assigned to this variance parameter
-and \eqn{H} is a set of hyperparameters which may be specified a-priori or estimated from the 
-data. When \eqn{p(\sigma_{\beta hj}^2 | H)} is an exponential (scaled-inverse chi-square) density, 
+where \eqn{\sigma_{\beta hj}^2}{sigma[beta hj]^2} is a marker-specific variance parameter, 
+\eqn{p(\sigma_{\beta hj}^2 | H)}{p(sigma[beta hj]^2|H)} is a prior density assigned to this variance parameter
+and \eqn{H}{H} is a set of hyperparameters which may be specified a-priori or estimated from the 
+data. When \eqn{p(\sigma_{\beta hj}^2 | H)}{p(sigma[beta hj]^2 | H)} is an exponential (scaled-inverse chi-square) density, 
 the resulting marginal prior density of marker effects is a double-exponential (scaled-t). 
 
 \emph{Pedigree-based regressions}
 
 They represent a generalization of the concept of `family history' to complex genealogies.
 These regressions have been used over more than 5 decades for prediction of genetic values in animal and
-plant breeding applications. Pedigree regressions can be implemented by setting \eqn{\boldsymbol K_{hu}=\boldsymbol A} where 
-\eqn{\boldsymbol A=\left\{a(i,i')\right\}} is a matrix whose entries are twice the coefficient of kinship between individuals, 
+plant breeding applications. Pedigree regressions can be implemented by setting \eqn{\boldsymbol K_{hu}=\boldsymbol A}{K[hu]=A} where 
+\eqn{\boldsymbol A=\left\{a(i,i')\right\}}{A=a(i,i')} is a matrix whose entries are twice the coefficient of kinship between individuals, 
 which can be computed from a pedigree.
 
 \emph{Reproducing Kernel Hilbert Regressions(RKHS)}
@@ -155,13 +155,13 @@ RKHS are used for semi-parametric regressions in applications as diverse as scat
 (smooting spline), spacial statistics (Kriging), gene expression or WGP. Estimates from RKHS can 
 be motivated as the solution to a penalized optimization problem of as posterior modes in certain class
 of Bayesian models. A Bayesian formulation of RKHS can be implemented  by simply setting 
-\eqn{\boldsymbol K_{uh}=\left\{ K_{uh} (i,i') \right\}} to be a matrix whose entries contain 
-the evaluations of a reproducing kernel at pairs of poings \eqn{(i,i')}. In WGP
-models the reproducing kernel, \eqn{K(i,i')=K(\boldsymbol z_i, \boldsymbol z_i')}, maps
-from pairs of marker genotypes \eqn{(\boldsymbol z_i, \boldsymbol z_i')} onto  co-variance function.
-For instance, using the Gaussian kernel, \eqn{K(i,i')=\exp\left( -\omega ||\boldsymbol z_i - \boldsymbol z_{i'}||^2\right)},
-where \eqn{||\boldsymbol z_i - \boldsymbol z_{i'}||}  is a Euclidean distance between the two 
-vectors of marker genotypes and \eqn{\omega} is a bandwith parameter.
+\eqn{\boldsymbol K_{uh}=\left\{ K_{uh} (i,i') \right\}}{K[uh]=K[uh](i,i')} to be a matrix whose entries contain 
+the evaluations of a reproducing kernel at pairs of poings \eqn{(i,i')}{(i,i')}. In WGP
+models the reproducing kernel, \eqn{K(i,i')=K(\boldsymbol z_i, \boldsymbol z_i')}{K(i,i')=K(z[i],z[i'])}, maps
+from pairs of marker genotypes \eqn{(\boldsymbol z_i, \boldsymbol z_i')}{z[i],z[i']} onto  co-variance function.
+For instance, using the Gaussian kernel, \eqn{K(i,i')=\exp\left( -\omega ||\boldsymbol z_i - \boldsymbol z_{i'}||^2\right)}{K(i,i')=exp(-w||z[i]-z[i']||)},
+where \eqn{||\boldsymbol z_i - \boldsymbol z_{i'}||}{z[i]-z[i']}  is a Euclidean distance between the two 
+vectors of marker genotypes and \eqn{\omega}{w} is a bandwith parameter.
 
 }
 
@@ -170,6 +170,7 @@ vectors of marker genotypes and \eqn{\omega} is a bandwith parameter.
 A list with posterior means, posterior standard deviations, and the parameters used to fit the model:
 
 }
+
 \references{
 de los Campos G., H. Naya, D. Gianola, J. Crossa, A. Legarra, E. Manfredi, K. Weigel and J. Cotes. 2009.
 Predicting Quantitative Traits with Regression Models for Dense Molecular Markers and Pedigree. \emph{Genetics} \bold{182}: 375-385.
@@ -179,6 +180,7 @@ Park T. and G. Casella. 2008. The Bayesian LASSO. \emph{Journal of the American 
 Spiegelhalter, D.J., N.G. Best, B.P. Carlin and A. van der Linde. 2002. Bayesian measures of model complexity and 
 fit (with discussion). \emph{Journal of the Royal Statistical Society}, Series B (Statistical Methodology) \bold{64} (4): 583-639.
 }
+
 \author{
 Gustavo de los Campos, Paulino Perez Rodriguez,
 }

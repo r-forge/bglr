@@ -23,3 +23,7 @@ version 1.0 (2012-10-01)
   This version will allow to use the hardware more efficiently. In UNIX-like 
   operating systems it uses OpenMP (http://en.wikipedia.org/wiki/OpenMP, http://wwww.openmp.org)
   to perform the computations. 
+
+version 1.1 (2012-12-13)
+
+   New functions to read and write plink files in binary format

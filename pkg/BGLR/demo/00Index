@@ -6,4 +6,5 @@ BA		BayesA
 BB		BayesB
 BEN		Bayesian Elastic Net LASSO
 read_bed	Read a BED file
+read_ped	Read a PED file
 write_bed      	Write a BED file

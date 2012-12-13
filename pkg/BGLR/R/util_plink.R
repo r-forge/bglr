@@ -26,6 +26,14 @@ read_bed=function(bed_file,bim_file,fam_file,na.strings=c("0","-9"),verbose=FALS
         return(list(n=n,p=p,x=out))
 }
 
+#This function will read a ped file
+#FIXME: It assumes that the missing value is 0
+read_ped=function(ped_file)
+{
+	out=.Call("read_ped",ped_file)
+	return(out)
+}
+
 #This function will write a bed file (binary file for genotypes in plink format)
 write_bed=function(x,n,p,bed_file)
 {
