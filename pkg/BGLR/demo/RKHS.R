@@ -1,4 +1,4 @@
-#This example will run a standard Bayesian LASSO
+#This example will run a RKHS model
 
 rm(list=ls())
 setwd(tempdir())
