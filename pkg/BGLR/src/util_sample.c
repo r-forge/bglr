@@ -7,7 +7,6 @@
 #ifdef SUPPORT_OPENMP
   #include <omp.h>
   #define CSTACK_DEFNS 7
-  #define CHUNKSIZE 100
   #include "Rinterface.h"
 #endif
 
@@ -137,7 +136,7 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
 	  rhs=0;
 	  #pragma omp parallel 
 	  {
-	    #pragma omp for reduction(+:rhs) schedule(static, CHUNKSIZE)
+	    #pragma omp for reduction(+:rhs) schedule(static)
 	    for(i=0; i<rows; i++)
 	    {
 	      xj[i]=pXL[i+j*rows];
@@ -149,7 +148,7 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
   	  c=pxL2[j]/sigma2e + 1.0/pvarBj[j];
 	  pbL[j]=rhs/c + sqrt(1.0/c)*norm_rand();
 	  
-	  #pragma omp for schedule(static, CHUNKSIZE)
+	  #pragma omp for schedule(static)
 	  for(i=0; i<rows; i++)
 	  {
 	    pe[i] = pe[i] - pbL[j]*xj[i];
@@ -222,14 +221,14 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
      //Rprintf("%d\n",pd[j]);
      if(pd[j]==1)
      {
-       #pragma omp for schedule(static, CHUNKSIZE)
+       #pragma omp for schedule(static)
        for(i=0; i<rows;i++)
        {
          eIn[i]=perror[i];
 	 eOut[i]=perror[i] + pX[i+j*rows] * pb[j];
        }
      }else{
-        #pragma omp for schedule(static, CHUNKSIZE)
+        #pragma omp for schedule(static)
         for(i=0; i<rows;i++)
 	{
 	  eOut[i]=perror[i];
@@ -241,7 +240,7 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
      
      #pragma omp parallel 
      {
-        #pragma omp for reduction(+:sum1,sum2) schedule(static, CHUNKSIZE)
+        #pragma omp for reduction(+:sum1,sum2) schedule(static)
 	for(i=0; i<rows;i++)
 	{
 	  sum1+=dnorm(eIn[i],0,sqrt(sigma2e),1); 
@@ -262,7 +261,7 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
      }
      
      //Update error
-     #pragma omp for schedule(static, CHUNKSIZE)
+     #pragma omp for schedule(static)
      for(i=0; i<rows;i++)
      {
          perror[i]=eOut[i] - pX[i+j*rows] * pb[j] * pd[j];

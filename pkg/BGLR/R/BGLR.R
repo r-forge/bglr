@@ -29,7 +29,6 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
     LT$X=as.vector(LT$X)
     LT$varB=1e10
     return(LT)
-
 }
 
 ## Gaussian Regression ############################################################
@@ -398,7 +397,7 @@ welcome=function()
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@colpos.mx              #\n");
-  cat("#    (   )     (   )   November, 2012                                #\n");
+  cat("#    (   )     (   )   December, 2012                                #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
@@ -407,20 +406,26 @@ welcome=function()
 }
 ##################################################################################################
 
-
 ##################################################################################################
+#The density of a scaled inverted chi-squered distribution
 dScaledInvChisq=function (x, df, S)
 {
     tmp = dchisq(S/x, df = df)/(x^2)
     return(tmp)
 }
+
+
 ##################################################################################################
+#The density function for lambda
+
 dLambda=function (rate, shape, lambda) 
 {
     tmp = dgamma(x = I(lambda^2), rate = rate, shape = shape) * 2 * lambda
     return(tmp)
 }
 
+##################################################################################################
+#Metropolis sampler for lambda in the Bayesian LASSO
 
 metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp = 0)
 {
@@ -444,6 +449,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
 }
 
 ##################################################################################################
+#Startup function
 .onAttach = function(library, pkg)
 {
   Rv = R.Version()
@@ -460,11 +466,34 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
   }
   invisible()
 }
+
+
+##################################################################################################
+#rtrun draws from a truncated univariate normal distribution using the inverse CDF algorithm
+#Arguments:
+#mu: mean
+#sigma: standard deviation
+#a: lower bound
+#b: upper bound
+#NOTES: 1) This routine was taken from bayesm package, December 18, 2012
+#       2) The inputs are not checked
+
+rtrun=function (mu, sigma, a, b) 
+{
+    FA = pnorm(((a - mu)/sigma))
+    FB = pnorm(((b - mu)/sigma))
+    return(mu + sigma * qnorm(runif(length(mu)) * (FB - FA) + FA))
+}
+
+#Extract the values of z such that y[i]=j
+#z,y vectors, j integer
+extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
+
 ##################################################################################################
 
 #Arguments:
 #y: data vector, NAs allowed
-#family: can be "gaussian", "bernoulli" or "ordinal",
+#response_type: can be "gaussian", "bernoulli" or "ordinal",
 #ETA: The linear predictor
 #nIter: Number of MCMC iterations
 #burnIn: burnIn
@@ -476,8 +505,9 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
 #R2
 #ncores: number of cores used in computations. If ncores=1 then it will 
 #        use OpenMP to perform the computations in UNIX like systems.
+#Note: The function was designed to work with gaussian responses, some changes were made to deal binary and ordinal responses
 
-BGLR=function(y,family="gaussian",
+BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
                ETA=NULL,
                nIter=1500,burnIn=500,thin=5,
                saveAt='',S0=NULL,df0=5, R2=0.5, 
@@ -485,12 +515,14 @@ BGLR=function(y,family="gaussian",
                weights=NULL,
                ncores=1,verbose=TRUE,rmExistingFiles=TRUE)
 {
-    welcome()
+    	welcome()
         
 	if(saveAt==''){ 
 	   saveAt=getwd() 
 	}
-	
+
+	a=as.vector(a)
+	b=as.vector(b)
 	y=as.vector(y)
 	n = length(y)
 	if(is.null(weights)){ weights=rep(1,n)}
@@ -499,16 +531,85 @@ BGLR=function(y,family="gaussian",
 	
 	whichNa=which(is.na(y))
 	nNa=length(whichNa)
+
+	Censored=FALSE
+
+	if(response_type=="gaussian")
+	{
+		if ((!is.null(a)) | (!is.null(b))) 
+		{
+			Censored = TRUE
+			if ((length(a) != n) | (length(b) != n)) stop("y,a and b must have the same dimension")
+			cat(' Weights are only implemented for Gausian uncensored response, if you provided them, they will be ignored');
+			weights=rep(1,n);
+		}
+	}
 	
 	mu = weighted.mean(x = y, w = weights, na.rm = TRUE)
 	post_mu=0
 	post_mu2=0
 	
-	fname<-paste(saveAt,'mu.dat',sep='') ;	
-	if(rmExistingFiles){ unlink(fname) 
-	}else{  cat(' Note: samples will be appended to existin files. \n') }
+	fname=paste(saveAt,'mu.dat',sep='');	
+	if(rmExistingFiles)
+	{ 
+		unlink(fname) 
+	}else{  
+		cat(' Note: samples will be appended to existin files. \n') 
+	}
 
-	fileOutMu=file(description=fname,open='w')       
+	fileOutMu=file(description=fname,open='w')
+	
+	#Do a small change, for working with the data augmentation algorithm, Albert & Chib, 1993. 
+	if(response_type=="bernoulli")
+        {
+		cat(' Prior for residual is not necessary, if you provided it, it will be ignored\n');
+		cat(' Weights are not supported, if you provided them, they will be ignored\n');
+
+                if(nNa>0) stop(' Missing values are not implemented yet for binary traits\n');
+		weights=rep(1,n);
+		z=y
+
+		#initialize y based on the z values
+                phat=mean(z)
+                mu=qnorm(sd = 1, mean = 0, p = phat)
+                nzero=sum(z==0)
+                none=sum(z==1)
+		y[z==0]=rtrun(mu=rep(mu,nzero),sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
+                y[z==1]=rtrun(mu=rep(mu,none),sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
+	} 
+
+	if(response_type=="ordinal")
+        {
+		cat(' Prior for residual is not necessary, if you provided it, it will be ignored\n');
+		cat(' Weights are not supported, if you provide them, they will be ignored\n');
+		
+                if(nNa>0) stop(' Missing values are not implemented yet for binary traits\n');
+		weights=rep(1,n);
+		z=y
+
+		#initialize cut-points
+		tmp=table(z)
+		nclass=length(names(tmp));
+                if(nclass<=2) stop(paste(' Data vector y has only ',nclass, ' differente values, it should have at least 3 different values\n'));
+		threshold=c(-Inf,seq(-3.5,3.5,length.out=nclass-1),Inf)
+
+		#initialize y based on the z-values
+                y[z==1]=-4
+                y[z==nclass]=4
+		for(m in 2:(nclass-1))
+		{
+			y[z==m]=0.5*(threshold[m]+threshold[m+1])
+		}
+
+		#mu, 
+		#if nclass-1 of the thresholds can move freely, then the intercept must be removed from the model
+		mu=0
+
+		#posterior for thresholds
+		post_threshold=0;
+		post_threshold2=0;
+	}
+	
 	
 	# yStar & yHat
 	yStar = y * weights
@@ -535,38 +636,56 @@ BGLR=function(y,family="gaussian",
 	post_varE=0
 	post_varE2=0
 	
-	fname<-paste(saveAt,'varE.dat',sep='') ; if(rmExistingFiles){ unlink(fname) }
+	fname=paste(saveAt,'varE.dat',sep=''); 
+
+	if(rmExistingFiles)
+	{ 
+	    unlink(fname) 
+	}
+
 	fileOutVarE=file(description=fname,open='w')
   
 	nLT=ifelse(is.null(ETA),0,length(ETA)) 
   
 	# Sets each of the linear terms in ETA
-	if(nLT>0){
-		for(i in 1:nLT){
-		    if(!(ETA[[i]]$model%in%c('FIXED','BRR','BL','BayesA','BayesC','RKHS'))){ stop(paste(' Error in ETA[[',i,']]', ' model ',ETA[[i]]$model,' not implemented (note: evaluation is case sensitive).',sep=''))}
+	if(nLT>0)
+	{
+		for(i in 1:nLT)
+		{
+		    if(!(ETA[[i]]$model%in%c('FIXED','BRR','BL','BayesA','BayesC','RKHS')))
+		    { 
+			stop(paste(' Error in ETA[[',i,']]', ' model ',ETA[[i]]$model,' not implemented (note: evaluation is case sensitive).',sep=''))
+		    }
 			
-			ETA[[i]]=switch(ETA[[i]]$model,
-					FIXED=setLT.Fixed(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
-					BRR=setLT.BRR(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
-					BL=setLT.BL(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
-					RKHS=setLT.RKHS(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),              
-					BayesC=setLT.BayesC(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),     
-					BayesA=setLT.BayesA(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles)
-					#BayesB=setLT.BayesB(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,saveAt=saveAt),
-                                        #BEN=setLT.BEN(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2,saveAt=saveAt)
-				        )
+		    ETA[[i]]=switch(ETA[[i]]$model,
+				    FIXED=setLT.Fixed(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
+				    BRR=setLT.BRR(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
+				    BL=setLT.BL(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
+				    RKHS=setLT.RKHS(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),              
+				    BayesC=setLT.BayesC(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),     
+				    BayesA=setLT.BayesA(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles)
+				    #BayesB=setLT.BayesB(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,saveAt=saveAt),
+                                    #BEN=setLT.BEN(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2,saveAt=saveAt)
+				    )
 		}
 	}	
 	
 	# Gibbs sampler
 	time=proc.time()[3]
-	for(i in 1:nIter){
+	for(i in 1:nIter)
+	{
 	  # intercept
 	  e = e + weights*mu
 	  rhs = sum(weights*e)/varE
 	  C = sumW2/varE
 	  sol = rhs/C
 	  mu = rnorm(n = 1, sd = sqrt(1/C)) + sol
+	
+	  if(response_type=="ordinal")
+	  {
+		mu=0
+          }
+		
 	  e = e - weights * mu
 
           #deltaSS and deltadf for updating varE
@@ -682,9 +801,7 @@ BGLR=function(y,family="gaussian",
 		      mrkIn=ETA[[j]]$d==1
 		      pIn=sum(mrkIn)
 		      if(pIn>0)
-		      {        
-			    
-				
+		      {        				
 			    x=.Call("extract_column",which(mrkIn),n, ETA[[j]]$X)
 				
 			    #?# ETA[[j]]$SSx[mrkIn]
@@ -738,18 +855,64 @@ BGLR=function(y,family="gaussian",
 		}#nLT
 		
 		# yHat & missing values
+		# Now only for gaussian responses
 		yHat=yStar-e
 		if (nNa > 0) 
 		{
-		  e[whichNa] = rnorm(n = nNa, sd = sdE)
-		  yStar[whichNa] = yHat[whichNa] + e[whichNa]
+                  if(Censored)
+                  {
+                     yStar[whichNa]=rtrun(mu = yHat[whichNa], a = a[whichNa], b = b[whichNa], sigma = sdE)
+                  }else{
+		     yStar[whichNa] = yHat[whichNa] + rnorm(n=nNa,sd=sdE)
+                  }
+                  e[whichNa]=yStar[whichNa] - yHat[whichNa];
 		}
 			
-		# residual variance
-		SS = sum(e*e) + S0 + deltaSS
-		DF =  n + df0 + deltadf
-		varE = SS/rchisq(n = 1, df = DF)
-		sdE = sqrt(varE)
+		# residual variance for Gaussian
+                # and Bernoulli families
+                if(response_type=="gaussian")
+                {
+			SS = sum(e*e) + S0 + deltaSS
+			DF =  n + df0 + deltadf
+			varE = SS/rchisq(n = 1, df = DF)
+			sdE = sqrt(varE)
+		}
+
+		if(response_type=="bernoulli")
+		{
+			varE=1;
+			sdE=1;
+
+			#Update yStar, this is the latent variable
+			yStar[z==1]=rtrun(mu=yHat[z==1],sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
+			yStar[z==0]=rtrun(mu=yHat[z==0],sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
+
+			#Update error
+			e=yStar-yHat;
+		}
+
+		if(response_type=="ordinal")
+		{	
+			varE=1;
+			sdE=1;
+
+			#Update yStar, this is the latent variable
+   			for(m in 1:n)
+   			{
+				yStar[m]=rtrun(mu=yHat[m],sigma=1,a=threshold[z[m]],b=threshold[z[m]+1]);
+   			}
+
+   			#Update thresholds
+   			for(m in 2:nclass)
+   			{
+     				lo=max(max(extract(yStar,z,m-1)),threshold[m-1]);
+     				hi=min(min(extract(yStar,z,m)),threshold[m+1]);
+     				threshold[m]=runif(1,lo,hi);
+   			}
+
+			#Update error
+			e=yStar-yHat;
+		}
 		
 		# Saving samples and computing running means
 		if ((i%%thin == 0)) 
@@ -860,13 +1023,20 @@ BGLR=function(y,family="gaussian",
 				
 				post_varE=post_varE*k +varE/nSums
 				post_varE2=post_varE2*k+(varE^2)/nSums
+
+				if(response_type=="ordinal")
+				{
+					post_threshold=post_threshold*k+threshold/nSums
+					post_threshold2=post_threshold2*k+(threshold^2)/nSums
+				}
 			}
 		} # end of saving samples and computing running means
-	    if(verbose){		
+	        if(verbose)
+		{		
 		   cat("---------------------------------------\n")
 		   tmp=proc.time()[3]
-		  cat(c(paste(c('  Iter=', 'Time/Iter=','varE='),round( c(i,c(tmp-time) ,varE),3),sep='')),'\n')
-  		  time = tmp
+		   cat(c(paste(c('  Iter=', 'Time/Iter=','varE='),round( c(i,c(tmp-time) ,varE),3),sep='')),'\n')
+  		   time = tmp
   		}
 	}# end of Gibbs sampler
   	
@@ -876,14 +1046,23 @@ BGLR=function(y,family="gaussian",
   	
   	if(nLT>0)
   	{
-  		for(i in 1:nLT){
-			if(!is.null(ETA[[i]]$fileOut)){			close(ETA[[i]]$fileOut)  }
-            ETA[[i]]$fileOut=NULL
+  		for(i in 1:nLT)
+		{
+			if(!is.null(ETA[[i]]$fileOut))
+			{			
+				close(ETA[[i]]$fileOut)  
+			}
+            		ETA[[i]]$fileOut=NULL
   		}
   	}
   	
   	#return goodies
-        out=list(y=y,whichNa=whichNa,saveAt=saveAt,nIter=nIter,burnIn=burnIn,thin=thin,minAbsBeta=minAbsBeta,weights=weights,ncores=ncores,verbose=verbose,family=family,df0=df0,S0=S0)
+	if(response_type=="bernoulli" | response_type=="ordinal")
+        {
+	  y=z
+	}
+
+        out=list(y=y,whichNa=whichNa,saveAt=saveAt,nIter=nIter,burnIn=burnIn,thin=thin,minAbsBeta=minAbsBeta,weights=weights,ncores=ncores,verbose=verbose,response_type=response_type,df0=df0,S0=S0)
 	
 	out$yHat<-post_yHat
 	out$SD.yHat<-sqrt(post_yHat2-(post_yHat^2))
@@ -891,6 +1070,12 @@ BGLR=function(y,family="gaussian",
 	out$SD.mu<-sqrt(post_mu2-post_mu^2)
 	out$varE<-post_varE
 	out$SD.varE<-sqrt(post_varE2-post_varE^2)
+
+	if(response_type=="ordinal")
+	{
+	  out$threshold=post_threshold[-c(1,nclass+1)]
+	  out$SD.threshold=sqrt(post_threshold2-post_threshold^2)[-c(1,nclass+1)]
+	}
 	
         # Renaming and removing objects in ETA
 	if(nLT>0){
@@ -1193,7 +1378,7 @@ setLT.BayesB=function(LT,n,j,weights,y,saveAt)
 }
 ##############################################
                     
-                    		    #FIXME: Experimental version with indicator variables 
+                    #FIXME: Experimental version with indicator variables 
 		    if(ETA[[j]]$model=='BayesB')
 		    {
 		      #Update marker effects
@@ -1239,9 +1424,8 @@ setLT.BayesB=function(LT,n,j,weights,y,saveAt)
 							ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
 							ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB2^2)/nSums
 						}
-##############################################################################################################################################
-	
-	
+##############################################################################################################################################	
+
 }
 
 

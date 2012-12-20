@@ -8,7 +8,7 @@
   were presented in de los Campos \emph{et al.} (2009, 2010).
 }
 \usage{
-  BGLR(y, family = "gaussian", ETA = NULL, nIter = 1500,
+  BGLR(y, response_type = "gaussian", a=NULL, b=NULL,ETA = NULL, nIter = 1500,
        burnIn = 500, thin = 5, saveAt = "", S0 = NULL, 
        df0 =5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL,
        ncores = 1, verbose = TRUE, rmExistingFiles = TRUE)
@@ -16,7 +16,9 @@
 }
 \arguments{
    \item{y}{(numeric, \eqn{n}{n}) the data-vector (NAs allowed).}
-   \item{family}{string, specify the distribution of the response variable, right now only gaussian responses are allowed.}
+   \item{response_type}{string, specify the distribution of the response variable, right now only gaussian, Bernoulli and ordinal responses are allowed.}
+   \item{a}{vector for specifying lower bound for censored observations, default value NULL. See details.}
+   \item{b}{vector for specifying upper bound for censored observations, default value NULL. See details.}
    \item{ETA}{A list of predictors and prior specifications for the regression coefficients. For example the prior for the 
              regression coefficients can be that used in Bayesian LASSO, Bayesian ridge regression, BayesA, BayesB, BayesC-pi, Elastic Net LASSO, etc. See details below.}
    \item{weights}{(numeric, \eqn{n}{n}) a vector of weights, may be NULL.}
@@ -163,6 +165,52 @@ For instance, using the Gaussian kernel, \eqn{K(i,i')=\exp\left( -\omega ||\bold
 where \eqn{||\boldsymbol z_i - \boldsymbol z_{i'}||}{z[i]-z[i']}  is a Euclidean distance between the two 
 vectors of marker genotypes and \eqn{\omega}{w} is a bandwith parameter.
 
+\emph{Censored outcomes}
+
+In BGLR censored outcomes are dealt with as a missing data problem. BGLR handles three types of 
+censoring: left, right and interval censored. For an interval censored data-point the information 
+available is \eqn{a_i< y_i < b_i}  where: \eqn{a_i}  and \eqn{b_i}  are known lower and upper bounds 
+and \eqn{y_i} is the actual phenotype which for censored data points is un-observed. Rigth censoring 
+occurs when \eqn{b_i} is also uknown, therefore, the only information available is  \eqn{a_i<y_i}. In 
+a time-to-event setting this means that we know that time to event exceeded the time at 
+censoring given by \eqn{a_i} . Left censoring occurs when \eqn{b_i} is unknown; therefore, 
+the only information available is: \eqn{y_i<b_i} . In BGLR censored outcomes are then specified 
+with three vectors, y, a and b. The configuration of the triplet   for un-censored, right-censored, 
+left-censored and interval censored are described in the table below. 
+
+\tabular{lccc}{
+                     \tab a             \tab y          \tab b  \cr
+   Un-censored       \tab NULL          \tab \eqn{y_i}  \tab NULL \cr
+   Right censored    \tab \eqn{a_i}     \tab NA         \tab \eqn{\infty} \cr
+   Left censored     \tab \eqn{-\infty} \tab NA         \tab \eqn{b_i} \cr
+   Interval censored \tab \eqn{b_i}     \tab NA         \tab \eqn{b_i}
+ } 
+
+The only modification introduced in the Gibbs sampler required for handling censored data points 
+consist of sampling, at each iteration of the Gibbs sampler, the censored phenotypes form 
+the corresponding fully-conditional densities which in BGLR are truncated normal densities.
+
+\emph{Binary outcomes}
+
+They can be modeled using the threshold model, or probit link. Here, probability of success is  \eqn{P(Y_i=1)=\Phi(\eta_i)}  
+where \eqn{\Phi(\cdot)} is the standard normal cumulative distribution function 
+(also known as normal probit link) and  \eqn{\eta_i} is a linear predictor which 
+can include the type of fixed or random effects handled by BGLR. In order to run a regression for 
+binary outcomes, the response must be coded with 0's (failure) and 1's (success), and 
+the argument response_type should be set to "Bernoulli". More details about this model
+can be found in Albert & Chib (1993).
+
+
+\emph{Ordinal outcomes}
+
+They can be modeled using also the threshold model. Here we model, 
+\eqn{\pi_{ij}=P(Y_i \leq j)=\Phi(\eta_{ij})}, where \eqn{\eta_{ij}=\gamma_j- \boldsymbol x_i' \boldsymbol \beta},
+where \eqn{\Phi(\cdot)} is the standard normal cumulative distribution function, \eqn{\gamma_{ij}} is a threshold, the thresholds must satisfy, 
+\eqn{-\infty = \gamma_0 < \gamma_1 < \cdots < \gamma_J=\infty}, \eqn{J} is the cardinality of 
+\eqn{\boldsymbol{y}}{y}. In order to run a regression for ordinal outomes, the response must be
+coded as \eqn{0, 1,...,J}, and the data should be ordered accordingly, the argument response_type should 
+be set to "ordinal". More details about this model can be found in Albert & Chib (1993).
+
 }
 
 \value{
@@ -172,8 +220,14 @@ A list with posterior means, posterior standard deviations, and the parameters u
 }
 
 \references{
+
+Albert J,. S. Chib. 1993. Bayesian Analysis of Binary and Polychotomus Response Data. \emph{JASA}, \bold{88}: 669-679.
+
 de los Campos G., H. Naya, D. Gianola, J. Crossa, A. Legarra, E. Manfredi, K. Weigel and J. Cotes. 2009.
 Predicting Quantitative Traits with Regression Models for Dense Molecular Markers and Pedigree. \emph{Genetics} \bold{182}: 375-385.
+
+de los Campos, G., D. Gianola, G. J. M., Rosa, K. A., Weigel, and J. Crossa. 2010.  Semi-parametric genomic-enabled prediction of genetic values using 
+reproducing kernel Hilbert spaces methods. \emph{Genetics Research}, \bold{92}:295-308.
 
 Park T. and G. Casella. 2008. The Bayesian LASSO. \emph{Journal of the American Statistical Association} \bold{103}: 681-686.
 
@@ -187,12 +241,6 @@ Gustavo de los Campos, Paulino Perez Rodriguez,
 \examples{
 
 \dontrun{
-
-#WARNING,
-#BUGGY IS DOES NOT PERFORM THE PRODUCT!!!!!
-# X%*%b0, so it appears like X, which is WRONG!!!!!
-#May be the R html translation tool is buggy
-
 #Demos
 library(BGLR)
 
@@ -213,6 +261,14 @@ demo(BayesCpi)
 
 #RKHS
 demo(RKHS)
+
+#Binary traits
+demo(Bernoulli)
+
+#Ordinal traits
+demo(ordinal)
+
+#Censored traits
 
 }
 
