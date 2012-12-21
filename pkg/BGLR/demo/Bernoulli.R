@@ -18,12 +18,53 @@ nIter=5000;
 burnIn=2500;
 thin=10;
 saveAt='';
-ETA<-list(list(X=X,model='FIXED'))
+ETA=list(list(X=X,model='FIXED'))
 
-fit_Bernoulli_BGLR=BGLR(y=y,response_type='bernoulli',ETA=ETA,nIter=nIter,burnIn=burnIn,
+fit_Bernoulli_BGLR=BGLR(y=y,response_type='Bernoulli',ETA=ETA,nIter=nIter,burnIn=burnIn,
                    thin=thin,saveAt=saveAt)
 fit_Bernoulli_BGLR$mu
+fit_Bernoulli_BGLR$SD.mu
 fit_Bernoulli_BGLR$ETA[[1]]$b
+fit_Bernoulli_BGLR$ETA[[1]]$SD.b
 
-fit_mle<-glm(y~v+r,family=binomial(link="probit")) 
+fit_mle=glm(y~v+r,family=binomial(link="probit")) 
 summary(fit_mle)
+
+readline("Press <return> to continue with next example: ") 
+
+#Example of prediction for missing values
+rm(list=ls())
+setwd(tempdir())
+
+#data
+data(wheat)
+
+#libraries
+library(pROC)
+ 
+# extracts phenotypes
+#continous
+
+y=wheat.Y[,1]  
+
+#binary                
+yBin=ifelse(y>0,1,0)
+
+# generates testing dataset
+tst=sample(1:599,size=100,replace=FALSE)
+yNA=yBin 
+yNA[tst]=NA
+  
+nIter=5000;
+burnIn=2500;
+thin=10;
+saveAt='';
+ETA=list(list(X=wheat.X,model='FIXED'))
+
+fit_Bernoulli_BGLR=BGLR(y=yNA,response_type='Bernoulli',ETA=ETA,nIter=nIter,burnIn=burnIn,
+                   thin=thin,saveAt=saveAt)
+
+mean((yBin[tst]-pnorm(fit_Bernoulli_BGLR$yHat[tst]))^2) # mean-sq. error
+auc(response=yBin[tst],predictor=fit_Bernoulli_BGLR$yHat[tst])
+
+

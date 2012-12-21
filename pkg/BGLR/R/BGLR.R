@@ -457,7 +457,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.12.1 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0 (2012-10-01)"
+  BGLR.version = "1.0 (2012-12-21)"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -493,7 +493,7 @@ extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
 
 #Arguments:
 #y: data vector, NAs allowed
-#response_type: can be "gaussian", "bernoulli" or "ordinal",
+#response_type: can be "gaussian", "Bernoulli" or "ordinal",
 #ETA: The linear predictor
 #nIter: Number of MCMC iterations
 #burnIn: burnIn
@@ -516,6 +516,8 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
                ncores=1,verbose=TRUE,rmExistingFiles=TRUE)
 {
     	welcome()
+
+	if(!(response_type%in%c('gaussian','Bernoulli','ordinal'))) stop(' Only gaussian, Bernoulli and ordinal responses are allowed\n');
         
 	if(saveAt==''){ 
 	   saveAt=getwd() 
@@ -525,7 +527,11 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
 	b=as.vector(b)
 	y=as.vector(y)
 	n = length(y)
-	if(is.null(weights)){ weights=rep(1,n)}
+
+	if(is.null(weights))
+        { 	
+		weights=rep(1,n)
+        }
 	sumW2=sum(weights^2)
 	nSums=0
 	
@@ -539,13 +545,12 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
 		if ((!is.null(a)) | (!is.null(b))) 
 		{
 			Censored = TRUE
-			if ((length(a) != n) | (length(b) != n)) stop("y,a and b must have the same dimension")
-			cat(' Weights are only implemented for Gausian uncensored response, if you provided them, they will be ignored');
-			weights=rep(1,n);
+			if ((length(a) != n) | (length(b) != n)) stop(' y, a and b must have the same dimension\n')
+			if(any(weights!=1)) stop (' Weights are only implemented for Gausian uncensored responses\n');
 		}
+                mu = weighted.mean(x = y, w = weights, na.rm = TRUE)
 	}
 	
-	mu = weighted.mean(x = y, w = weights, na.rm = TRUE)
 	post_mu=0
 	post_mu2=0
 	
@@ -554,37 +559,38 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
 	{ 
 		unlink(fname) 
 	}else{  
-		cat(' Note: samples will be appended to existin files. \n') 
+		cat(' Note: samples will be appended to existing files. \n') 
 	}
 
 	fileOutMu=file(description=fname,open='w')
 	
 	#Do a small change, for working with the data augmentation algorithm, Albert & Chib, 1993. 
-	if(response_type=="bernoulli")
+	if(response_type=="Bernoulli")
         {
 		cat(' Prior for residual is not necessary, if you provided it, it will be ignored\n');
-		cat(' Weights are not supported, if you provided them, they will be ignored\n');
+                if(any(weights!=1)) stop (' Weights are not supported \n');
 
-                if(nNa>0) stop(' Missing values are not implemented yet for binary traits\n');
-		weights=rep(1,n);
 		z=y
 
 		#initialize y based on the z values
-                phat=mean(z)
+                phat=mean(z,na.rm=TRUE)
                 mu=qnorm(sd = 1, mean = 0, p = phat)
-                nzero=sum(z==0)
-                none=sum(z==1)
-		y[z==0]=rtrun(mu=rep(mu,nzero),sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
-                y[z==1]=rtrun(mu=rep(mu,none),sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
+                whichZero=which(z==0)
+		whichOne=which(z==1)
+                nzero=length(whichZero)
+                none=length(whichOne)
+		y[whichZero]=rtrun(mu=rep(mu,nzero),sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
+                y[whichOne]=rtrun(mu=rep(mu,none),sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
+
+                if(nNa>0) y[whichNa]=rnorm(n=nNa,mean=mu,sd=1)
 	} 
 
 	if(response_type=="ordinal")
         {
 		cat(' Prior for residual is not necessary, if you provided it, it will be ignored\n');
-		cat(' Weights are not supported, if you provide them, they will be ignored\n');
+		if(any(weights!=1)) stop (' Weights are not supported \n');
 		
-                if(nNa>0) stop(' Missing values are not implemented yet for binary traits\n');
-		weights=rep(1,n);
+                if(nNa>0) stop(' Missing values are not implemented yet for ordinary traits\n');
 		z=y
 
 		#initialize cut-points
@@ -878,14 +884,14 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
 			sdE = sqrt(varE)
 		}
 
-		if(response_type=="bernoulli")
+		if(response_type=="Bernoulli")
 		{
 			varE=1;
 			sdE=1;
 
 			#Update yStar, this is the latent variable
-			yStar[z==1]=rtrun(mu=yHat[z==1],sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
-			yStar[z==0]=rtrun(mu=yHat[z==0],sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
+			yStar[whichOne]=rtrun(mu=yHat[whichOne],sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
+			yStar[whichZero]=rtrun(mu=yHat[whichZero],sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
 
 			#Update error
 			e=yStar-yHat;
@@ -1057,7 +1063,7 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
   	}
   	
   	#return goodies
-	if(response_type=="bernoulli" | response_type=="ordinal")
+	if(response_type=="Bernoulli" | response_type=="ordinal")
         {
 	  y=z
 	}
