@@ -183,13 +183,15 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     if(is.null(LT$V))
     {
 	LT$K = as.matrix(LT$K)
+        if(nrow(LT$K)!=ncol(LT$K)) stop(paste(" Kermel for linear term ",j, " is not a square matrix\n",sep=""))
 	#?# cambie     T = diag(weights)   LT$K = T %*% LT$K %*% T por lo que sigue abajo diag(weights)lo hace muy ineficiente
 	for(i in 1:nrow(LT$K))
         {
-		for(j in i:ncol(LT$K))
+		#j can not be used as subindex because its value is overwritten
+		for(m in i:ncol(LT$K))
                 {    
-				LT$K[i,j]<-LT$K[i,j]*weights[i]*weights[j] ;
-				LT$K[j,i]<-LT$K[j,i]
+				LT$K[i,m]<-LT$K[i,m]*weights[i]*weights[m] ;
+				LT$K[m,i]<-LT$K[m,i]
 		}
 	}
         tmp =eigen(LT$K)
@@ -507,603 +509,579 @@ extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
 #        use OpenMP to perform the computations in UNIX like systems.
 #Note: The function was designed to work with gaussian responses, some changes were made to deal binary and ordinal responses
 
-BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
-               ETA=NULL,
-               nIter=1500,burnIn=500,thin=5,
-               saveAt='',S0=NULL,df0=5, R2=0.5, 
-               minAbsBeta=1e-09,
-               weights=NULL,
-               ncores=1,verbose=TRUE,rmExistingFiles=TRUE)
+BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL, 
+    ETA = NULL, nIter = 1500, burnIn = 500, thin = 5, saveAt = "", 
+    S0 = NULL, df0 = 5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL, 
+    ncores = 1, verbose = TRUE, rmExistingFiles = TRUE) 
 {
-    	welcome()
+    welcome()
 
-	if(!(response_type%in%c('gaussian','Bernoulli','ordinal'))) stop(' Only gaussian, Bernoulli and ordinal responses are allowed\n');
-        
-	if(saveAt==''){ 
-	   saveAt=getwd() 
-	}
+    if (!(response_type %in% c("gaussian", "Bernoulli", "ordinal")))  stop(" Only gaussian, Bernoulli and ordinal responses are allowed\n")
 
-	a=as.vector(a)
-	b=as.vector(b)
-	y=as.vector(y)
-	n = length(y)
+    if (saveAt == "") {
+        saveAt = paste(getwd(), "/", sep = "")
+    }
 
-	if(is.null(weights))
-        { 	
-		weights=rep(1,n)
+    a = as.vector(a)
+    b = as.vector(b)
+    y = as.vector(y)
+    n = length(y)
+
+    if (is.null(weights)) 
+    {
+        weights = rep(1, n)
+    }
+
+    sumW2 = sum(weights^2)
+    nSums = 0
+
+    whichNa = which(is.na(y))
+    nNa = length(whichNa)
+
+    Censored = FALSE
+
+    if (response_type == "gaussian") 
+    {
+        if ((!is.null(a)) | (!is.null(b))) 
+        {
+            Censored = TRUE
+            if ((length(a) != n) | (length(b) != n)) stop(" y, a and b must have the same dimension\n")
+            if (any(weights != 1)) stop(" Weights are only implemented for Gausian uncensored responses\n")
         }
-	sumW2=sum(weights^2)
-	nSums=0
+        mu = weighted.mean(x = y, w = weights, na.rm = TRUE)
+    }
+    post_mu = 0
+    post_mu2 = 0
+
+    fname = paste(saveAt, "mu.dat", sep = "")
+    if (rmExistingFiles) 
+    {
+        unlink(fname)
+    }
+    else {
+        cat(" Note: samples will be appended to existing files. \n")
+    }
+
+    fileOutMu = file(description = fname, open = "w")
+
+    #Do a small change, for working with the data augmentation algorithm, Albert & Chib, 1993.
+    if (response_type == "Bernoulli") {
+        cat(" Prior for residual is not necessary, if you provided it, it will be ignored\n")
+        if (any(weights != 1)) stop(" Weights are not supported \n")
+       
+        z = y
+        
+        phat = mean(z, na.rm = TRUE)
+        mu = qnorm(sd = 1, mean = 0, p = phat)
+        whichZero = which(z == 0)
+        whichOne = which(z == 1)
+        nzero = length(whichZero)
+        none = length(whichOne)
+        y[whichZero] = rtrun(mu = rep(mu, nzero), sigma = rep(1, nzero), a = rep(-Inf, nzero), b = rep(0, nzero))
+        y[whichOne] = rtrun(mu = rep(mu, none), sigma = rep(1, none), a = rep(0, none), b = rep(Inf, none))
+        if (nNa > 0) y[whichNa] = rnorm(n = nNa, mean = mu, sd = 1)
+    }
+
+    if (response_type == "ordinal") {
+        cat(" Prior for residual is not necessary, if you provided it, it will be ignored\n")
+        if (any(weights != 1)) stop(" Weights are not supported \n")
+        if (nNa > 0) stop(" Missing values are not implemented yet for ordinary traits\n")
+        
+        z = y
+
+        #initialize cut-points
+        tmp = table(z)
+        nclass = length(names(tmp))
+        if (nclass <= 2) stop(paste(" Data vector y has only ", nclass, " differente values, it should have at least 3 different values\n"))
+        threshold = c(-Inf, seq(-3.5, 3.5, length.out = nclass - 1), Inf)
+
+        #initialize y based on the z-values
+        y[z == 1] = -4
+        y[z == nclass] = 4
+        for (m in 2:(nclass - 1)) {
+            y[z == m] = 0.5 * (threshold[m] + threshold[m + 1])
+        }
 	
-	whichNa=which(is.na(y))
-	nNa=length(whichNa)
+	#mu, 
+        #if nclass-1 of the thresholds can move freely, then the intercept must be removed from the model
+        mu=0
+        
+        #posterior for thresholds
+        post_threshold = 0
+        post_threshold2 = 0
+    }
 
-	Censored=FALSE
+    post_logLik = 0
 
-	if(response_type=="gaussian")
-	{
-		if ((!is.null(a)) | (!is.null(b))) 
-		{
-			Censored = TRUE
-			if ((length(a) != n) | (length(b) != n)) stop(' y, a and b must have the same dimension\n')
-			if(any(weights!=1)) stop (' Weights are only implemented for Gausian uncensored responses\n');
-		}
-                mu = weighted.mean(x = y, w = weights, na.rm = TRUE)
-	}
-	
-	post_mu=0
-	post_mu2=0
-	
-	fname=paste(saveAt,'mu.dat',sep='');	
-	if(rmExistingFiles)
-	{ 
-		unlink(fname) 
-	}else{  
-		cat(' Note: samples will be appended to existing files. \n') 
-	}
+    # yStar & yHat
+    yStar = y * weights
+    yHat = mu * weights
+    
+    if (nNa > 0) {
+        yStar[whichNa] = yHat[whichNa]
+    }
 
-	fileOutMu=file(description=fname,open='w')
-	
-	#Do a small change, for working with the data augmentation algorithm, Albert & Chib, 1993. 
-	if(response_type=="Bernoulli")
-        {
-		cat(' Prior for residual is not necessary, if you provided it, it will be ignored\n');
-                if(any(weights!=1)) stop (' Weights are not supported \n');
+    post_yHat = rep(0, n)
+    post_yHat2 = rep(0, n)
 
-		z=y
+    # residual and residual variance
+    e = (yStar - yHat)
 
-		#initialize y based on the z values
-                phat=mean(z,na.rm=TRUE)
-                mu=qnorm(sd = 1, mean = 0, p = phat)
-                whichZero=which(z==0)
-		whichOne=which(z==1)
-                nzero=length(whichZero)
-                none=length(whichOne)
-		y[whichZero]=rtrun(mu=rep(mu,nzero),sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
-                y[whichOne]=rtrun(mu=rep(mu,none),sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
+    varE = var(e, na.rm = TRUE) * (1 - R2)
+    sdE = sqrt(varE)
 
-                if(nNa>0) y[whichNa]=rnorm(n=nNa,mean=mu,sd=1)
-	} 
+    if (is.null(S0)) {
+        S0 = varE * (df0 - 2)
+    }
 
-	if(response_type=="ordinal")
-        {
-		cat(' Prior for residual is not necessary, if you provided it, it will be ignored\n');
-		if(any(weights!=1)) stop (' Weights are not supported \n');
-		
-                if(nNa>0) stop(' Missing values are not implemented yet for ordinary traits\n');
-		z=y
+    post_varE = 0
+    post_varE2 = 0
 
-		#initialize cut-points
-		tmp=table(z)
-		nclass=length(names(tmp));
-                if(nclass<=2) stop(paste(' Data vector y has only ',nclass, ' differente values, it should have at least 3 different values\n'));
-		threshold=c(-Inf,seq(-3.5,3.5,length.out=nclass-1),Inf)
+    fname = paste(saveAt, "varE.dat", sep = "")
 
-		#initialize y based on the z-values
-                y[z==1]=-4
-                y[z==nclass]=4
-		for(m in 2:(nclass-1))
-		{
-			y[z==m]=0.5*(threshold[m]+threshold[m+1])
-		}
+    if (rmExistingFiles) {
+        unlink(fname)
+    }
 
-		#mu, 
-		#if nclass-1 of the thresholds can move freely, then the intercept must be removed from the model
-		mu=0
+    fileOutVarE = file(description = fname, open = "w")
 
-		#posterior for thresholds
-		post_threshold=0;
-		post_threshold2=0;
-	}
-	
-	
-	# yStar & yHat
-	yStar = y * weights
-	yHat=mu*weights
+    nLT = ifelse(is.null(ETA), 0, length(ETA))
 
-	if(nNa>0){
-	  yStar[whichNa] = yHat[whichNa]
-	}
-	
-	post_yHat=rep(0,n)
-	post_yHat2=rep(0,n)		
-	
-	# residual and residual variance
-	e = (yStar - yHat)
+    if (nLT > 0) {
+        for (i in 1:nLT) {
+            if (!(ETA[[i]]$model %in% c("FIXED", "BRR", "BL", 
+                "BayesA", "BayesC", "RKHS"))) {
+                stop(paste(" Error in ETA[[", i, "]]", " model ", 
+                  ETA[[i]]$model, " not implemented (note: evaluation is case sensitive).", 
+                  sep = ""))
+            }
+            ETA[[i]] = switch(ETA[[i]]$model, 
+			      FIXED = setLT.Fixed(LT = ETA[[i]],  n = n, j = i, weights = weights, y = y, nLT = nLT, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
+                              BRR = setLT.BRR(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
+                              BL = setLT.BL(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
+                              RKHS = setLT.RKHS(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
+                              BayesC = setLT.BayesC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
+                              BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
+                              #BayesB=setLT.BayesB(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,saveAt=saveAt),
+                              #BEN=setLT.BEN(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2,saveAt=saveAt)
+                              )
+        }
+    }
+    # Gibbs sampler
+    time = proc.time()[3]
+    for (i in 1:nIter) {
+        # intercept
+        e = e + weights * mu
+        rhs = sum(weights * e)/varE
+        C = sumW2/varE
+        sol = rhs/C
+        mu = rnorm(n = 1, sd = sqrt(1/C)) + sol
 
-	varE = var(e, na.rm = TRUE)*(1-R2)
-	sdE=sqrt(varE)
-	
-	if(is.null(S0))
-	{
-	  S0=varE*(df0-2) 
-	}		    	
-	
-	post_varE=0
-	post_varE2=0
-	
-	fname=paste(saveAt,'varE.dat',sep=''); 
+        if (response_type == "ordinal") {
+            mu = 0
+        }
 
-	if(rmExistingFiles)
-	{ 
-	    unlink(fname) 
-	}
+        e = e - weights * mu
+        
+        #deltaSS and deltadf for updating varE
+        deltaSS = 0
+        deltadf = 0
 
-	fileOutVarE=file(description=fname,open='w')
-  
-	nLT=ifelse(is.null(ETA),0,length(ETA)) 
-  
-	# Sets each of the linear terms in ETA
-	if(nLT>0)
-	{
-		for(i in 1:nLT)
-		{
-		    if(!(ETA[[i]]$model%in%c('FIXED','BRR','BL','BayesA','BayesC','RKHS')))
-		    { 
-			stop(paste(' Error in ETA[[',i,']]', ' model ',ETA[[i]]$model,' not implemented (note: evaluation is case sensitive).',sep=''))
-		    }
-			
-		    ETA[[i]]=switch(ETA[[i]]$model,
-				    FIXED=setLT.Fixed(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
-				    BRR=setLT.BRR(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
-				    BL=setLT.BL(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),
-				    RKHS=setLT.RKHS(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),              
-				    BayesC=setLT.BayesC(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles),     
-				    BayesA=setLT.BayesA(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2=R2,saveAt=saveAt,rmExistingFiles=rmExistingFiles)
-				    #BayesB=setLT.BayesB(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,saveAt=saveAt),
-                                    #BEN=setLT.BEN(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2,saveAt=saveAt)
-				    )
-		}
-	}	
-	
-	# Gibbs sampler
-	time=proc.time()[3]
-	for(i in 1:nIter)
-	{
-	  # intercept
-	  e = e + weights*mu
-	  rhs = sum(weights*e)/varE
-	  C = sumW2/varE
-	  sol = rhs/C
-	  mu = rnorm(n = 1, sd = sqrt(1/C)) + sol
-	
-	  if(response_type=="ordinal")
-	  {
-		mu=0
-          }
-		
-	  e = e - weights * mu
+        if (nLT > 0) {
+            for (j in 1:nLT) {
+                ## Fixed effects ####################################################################
+                if (ETA[[j]]$model == "FIXED") {
+                  varBj = rep(ETA[[j]]$varB, ETA[[j]]$p)
+                  ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
+                                             e, varBj, varE, minAbsBeta, ncores)
+                  ETA[[j]]$b = ans[[1]]
+                  e = ans[[2]]
+                }#End of fixed effects
 
-          #deltaSS and deltadf for updating varE
-          deltaSS=0
-          deltadf=0
-		
-	  # Sampling effects
-	  if(nLT>0){
-		for(j in 1:nLT){
-		  ## Fixed effects ####################################################################
-		  if(ETA[[j]]$model=='FIXED'){
-		    varBj = rep(ETA[[j]]$varB,ETA[[j]]$p)
-		    ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-				                e,varBj, varE, minAbsBeta,ncores)
-		    ETA[[j]]$b= ans[[1]]
-		    e=ans[[2]]
-		  } #End of fixed effects
-		  
-		  
-		  ## Ridge Regression ##################################################################
-		  if(ETA[[j]]$model=='BRR')
-		  {
-		    varBj = rep(ETA[[j]]$varB,ETA[[j]]$p)
-		    ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-						e,varBj, varE, minAbsBeta,ncores)
-		    ETA[[j]]$b= ans[[1]]
-		    e = ans[[2]]
-		    
-		    DF=ETA[[j]]$df0+ETA[[j]]$p   
-		    SS=sum(ETA[[j]]$b^2)+ETA[[j]]$S0 
-		    ETA[[j]]$varB=SS/rchisq(df=DF,n=1)
+                ## Ridge Regression ##################################################################
+                if (ETA[[j]]$model == "BRR") {
+                  varBj = rep(ETA[[j]]$varB, ETA[[j]]$p)
+                  ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
+                                             e, varBj, varE, minAbsBeta, ncores)
+                  ETA[[j]]$b = ans[[1]]
+                  e = ans[[2]]
 
-		  }# END BRR
-		  
-		  ## Bayesian LASSO ####################################################################
-		  if(ETA[[j]]$model=='BL')
-		  {	
-		    varBj = ETA[[j]]$tau2 * varE
-		    ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2,  ETA[[j]]$b, 
-						e, varBj, varE, minAbsBeta,ncores)
-		    ETA[[j]]$b = ans[[1]]
-		    e=ans[[2]]
-		    
-		    nu = sqrt(varE) * ETA[[j]]$lambda/abs(ETA[[j]]$b)
-		    tmp = NULL
-		    try(tmp <- rinvGauss(n = ETA[[j]]$p, nu = nu, lambda =ETA[[j]]$lambda2))
-		    
-		    if (!is.null(tmp)) {
-			   if (!any(is.na(sqrt(tmp)))){
-			       ETA[[j]]$tau2 = 1/tmp
-			   }else{
-			      cat("WARNING: tau2 was not updated due to numeric problems with beta\n")
-			   }
-		    }else{
-			  cat("WARNING: tau2 was not updated due to numeric problems with beta\n")
-		    }
+                  DF = ETA[[j]]$df0 + ETA[[j]]$p
+                  SS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0
+                  ETA[[j]]$varB = SS/rchisq(df = DF, n = 1)
+                }# END BRR
 
-                    #Update lambda 
-		    if(ETA[[j]]$type=='gamma'){
-			    rate = sum(ETA[[j]]$tau2)/2 + ETA[[j]]$rate
-			    shape = ETA[[j]]$p + ETA[[j]]$shape
-			    ETA[[j]]$lambda2 = rgamma(rate = rate, shape = shape, n = 1)
-			    if (!is.na(ETA[[j]]$lambda2)) {
-			       ETA[[j]]$lambda = sqrt(ETA[[j]]$lambda2)
-			    }else{
-			        cat("WARNING: lambda was not updated due to numeric problems with beta\n")
-			    }
-		     }
-		     
-		     if(ETA[[j]]$type=='beta'){
-			    ETA[[j]]$lambda = metropLambda(tau2 = ETA[[j]]$tau2, lambda = ETA[[j]]$lambda, 
-							 shape1 = ETA[[j]]$shape1, shape2 = ETA[[j]]$shape2, 
-							  max = ETA[[j]]$max)
-			    ETA[[j]]$lambda2=ETA[[j]]$lambda^2
-		      }
-                       
+                ## Bayesian LASSO ####################################################################
+                if (ETA[[j]]$model == "BL") {
+                  varBj = ETA[[j]]$tau2 * varE
+                  ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
+                                             e, varBj, varE, minAbsBeta, ncores)
+                  ETA[[j]]$b = ans[[1]]
+                  e = ans[[2]]
 
-                      deltaSS=deltaSS+sum((ETA[[j]]$b/sqrt(ETA[[j]]$tau2))^2)
-                      deltadf=deltadf+ETA[[j]]$p
-
-		    }#END BL
-
-		    
-		    ## RKHS ####################################################################
-
-		    if(ETA[[j]]$model=='RKHS')
-		    {  
-			  #error
-			  e = e + ETA[[j]]$u
-			  rhs = crossprod(ETA[[j]]$V, e)/varE
-			  varU = ETA[[j]]$varU * ETA[[j]]$d
-			  C = as.numeric(1/varU + 1/varE)
-			  SD = 1/sqrt(C)
-			  sol = rhs/C
-			  tmp = rnorm(n = ETA[[j]]$levelsU, mean = sol,sd = SD)
-			  ETA[[j]]$uStar = tmp
-			  ETA[[j]]$u = as.vector(ETA[[j]]$V %*% tmp)
-			  
-			  #update error
-			  e = e - ETA[[j]]$u
-			  
-			  #Update the variance
-			  tmp = ETA[[j]]$uStar/sqrt(ETA[[j]]$d)
-			  SS = as.numeric(crossprod(tmp)) + ETA[[j]]$S0
-			  DF = ETA[[j]]$levelsU + ETA[[j]]$df0
-			  ETA[[j]]$varU = SS/rchisq(n = 1, df = DF)
-			}#END RKHS
-		    
-		    ## Bayes C ################################################################################
-		    if(ETA[[j]]$model=='BayesC')
-		    {
-		      #Update marker effects
-		      mrkIn=ETA[[j]]$d==1
-		      pIn=sum(mrkIn)
-		      if(pIn>0)
-		      {        				
-			    x=.Call("extract_column",which(mrkIn),n, ETA[[j]]$X)
-				
-			    #?# ETA[[j]]$SSx[mrkIn]
-			    
-			    ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn], 
-			               e, rep(ETA[[j]]$varB, pIn), varE, minAbsBeta,ncores)
-				
-			    ETA[[j]]$b[mrkIn] = ans[[1]]
-			    e = ans[[2]]
-		      }
-		      
-		      if((ETA[[j]]$p-pIn)>0)
-		      {
-			      ETA[[j]]$b[(!mrkIn)]=rnorm(n=(ETA[[j]]$p-pIn),sd=sqrt(ETA[[j]]$varB))
-		      }
-		      
-		      #Update indicator variables #?# discuss this ##
-			  
-		      ans=.Call("d_e",ETA[[j]]$p,n,ETA[[j]]$X,ETA[[j]]$d,ETA[[j]]$b,e,varE,ETA[[j]]$probIn,ncores)
-			  
-		      ETA[[j]]$d=ans[[1]]
-		      e=ans[[2]]
-		      
-		      #Update the variance of marker effects
-		      SS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0
-		      DF = ETA[[j]]$df0 + ETA[[j]]$p
-		      ETA[[j]]$varB = SS/rchisq(df = DF, n = 1)
-
-		      mrkIn = sum(ETA[[j]]$d)
-		      ETA[[j]]$probIn = rbeta(shape1 = (mrkIn + ETA[[j]]$countsIn + 1), 
-		                               shape2 = (ETA[[j]]$p - mrkIn + ETA[[j]]$countsOut + 1), n = 1)
-		    }#End BayesC
-		    
-		    ## BayesA ##############################################################################
-		    if(ETA[[j]]$model=='BayesA')
-		    {
-				varBj = ETA[[j]]$varB
-			
-				ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2,  ETA[[j]]$b, 
-							e, varBj, varE, minAbsBeta,ncores)
-			
-			ETA[[j]]$b=ans[[1]]
-			e=ans[[2]]
-
-			#Update variances
-			SS<-ETA[[j]]$S0+ETA[[j]]$b^2
-			DF<-ETA[[j]]$df0+1
-			ETA[[j]]$varB=SS/rchisq(n=ETA[[j]]$p,df=DF)
-		    }#End BayesA
-		   }#Loop for
-		}#nLT
-		
-		# yHat & missing values
-		# Now only for gaussian responses
-		yHat=yStar-e
-		if (nNa > 0) 
-		{
-                  if(Censored)
-                  {
-                     yStar[whichNa]=rtrun(mu = yHat[whichNa], a = a[whichNa], b = b[whichNa], sigma = sdE)
-                  }else{
-		     yStar[whichNa] = yHat[whichNa] + rnorm(n=nNa,sd=sdE)
+                  nu = sqrt(varE) * ETA[[j]]$lambda/abs(ETA[[j]]$b)
+                  tmp = NULL
+                  try(tmp <- rinvGauss(n = ETA[[j]]$p, nu = nu, lambda = ETA[[j]]$lambda2))
+                  if (!is.null(tmp)) {
+                    if (!any(is.na(sqrt(tmp)))) {
+                      ETA[[j]]$tau2 = 1/tmp
+                    }
+                    else {
+                      cat("WARNING: tau2 was not updated due to numeric problems with beta\n")
+                    }
                   }
-                  e[whichNa]=yStar[whichNa] - yHat[whichNa];
-		}
-			
-		# residual variance for Gaussian
-                # and Bernoulli families
-                if(response_type=="gaussian")
-                {
-			SS = sum(e*e) + S0 + deltaSS
-			DF =  n + df0 + deltadf
-			varE = SS/rchisq(n = 1, df = DF)
-			sdE = sqrt(varE)
-		}
+                  else {
+                    cat("WARNING: tau2 was not updated due to numeric problems with beta\n")
+                  }
 
-		if(response_type=="Bernoulli")
-		{
-			varE=1;
-			sdE=1;
+                  #Update lambda 
+                  if (ETA[[j]]$type == "gamma") {
+                    rate = sum(ETA[[j]]$tau2)/2 + ETA[[j]]$rate
+                    shape = ETA[[j]]$p + ETA[[j]]$shape
+                    ETA[[j]]$lambda2 = rgamma(rate = rate, shape = shape, n = 1)
+                    if (!is.na(ETA[[j]]$lambda2)) {
+                      ETA[[j]]$lambda = sqrt(ETA[[j]]$lambda2)
+                    }
+                    else {
+                      cat("WARNING: lambda was not updated due to numeric problems with beta\n")
+                    }
+                  }
 
-			#Update yStar, this is the latent variable
-			yStar[whichOne]=rtrun(mu=yHat[whichOne],sigma=rep(1,none),a=rep(0,none),b=rep(Inf,none));
-			yStar[whichZero]=rtrun(mu=yHat[whichZero],sigma=rep(1,nzero),a=rep(-Inf,nzero),b=rep(0,nzero));
+                  if (ETA[[j]]$type == "beta") {
+                    ETA[[j]]$lambda = metropLambda(tau2 = ETA[[j]]$tau2, 
+                                                   lambda = ETA[[j]]$lambda, shape1 = ETA[[j]]$shape1, shape2 = ETA[[j]]$shape2, 
+                                                   max = ETA[[j]]$max)
+                    ETA[[j]]$lambda2 = ETA[[j]]$lambda^2
+                  }
 
-			#Update error
-			e=yStar-yHat;
-		}
+                  deltaSS = deltaSS + sum((ETA[[j]]$b/sqrt(ETA[[j]]$tau2))^2)
+                  deltadf = deltadf + ETA[[j]]$p
+                }#END BL
 
-		if(response_type=="ordinal")
-		{	
-			varE=1;
-			sdE=1;
+                ## RKHS ####################################################################
+                if (ETA[[j]]$model == "RKHS") {
+                  #error
+                  e = e + ETA[[j]]$u
+                  rhs = crossprod(ETA[[j]]$V, e)/varE
+                  varU = ETA[[j]]$varU * ETA[[j]]$d
+                  C = as.numeric(1/varU + 1/varE)
+                  SD = 1/sqrt(C)
+                  sol = rhs/C
+                  tmp = rnorm(n = ETA[[j]]$levelsU, mean = sol, sd = SD)
+                  ETA[[j]]$uStar = tmp
+                  ETA[[j]]$u = as.vector(ETA[[j]]$V %*% tmp)
+		  
+                  #update error
+                  e = e - ETA[[j]]$u
+                   
+                  #update the variance
+                  tmp = ETA[[j]]$uStar/sqrt(ETA[[j]]$d)
+                  SS = as.numeric(crossprod(tmp)) + ETA[[j]]$S0
+                  DF = ETA[[j]]$levelsU + ETA[[j]]$df0
+                  ETA[[j]]$varU = SS/rchisq(n = 1, df = DF)
+                }#END RKHS
 
-			#Update yStar, this is the latent variable
-   			for(m in 1:n)
-   			{
-				yStar[m]=rtrun(mu=yHat[m],sigma=1,a=threshold[z[m]],b=threshold[z[m]+1]);
-   			}
+                ## Bayes C ################################################################################
+                if (ETA[[j]]$model == "BayesC") {
+                  #Update marker effects
+                  mrkIn = ETA[[j]]$d == 1
+                  pIn = sum(mrkIn)
+                  if (pIn > 0) {
+                    x = .Call("extract_column", which(mrkIn), n, ETA[[j]]$X)
 
-   			#Update thresholds
-   			for(m in 2:nclass)
-   			{
-     				lo=max(max(extract(yStar,z,m-1)),threshold[m-1]);
-     				hi=min(min(extract(yStar,z,m)),threshold[m+1]);
-     				threshold[m]=runif(1,lo,hi);
-   			}
+                    #?# ETA[[j]]$SSx[mrkIn]
 
-			#Update error
-			e=yStar-yHat;
-		}
-		
-		# Saving samples and computing running means
-		if ((i%%thin == 0)) 
-		{
-			if(nLT>0)
-			{
-				for(j in 1:nLT)
-				{
-					if(ETA[[j]]$model=='FIXED')
-					{
-						write(ETA[[j]]$b,file=ETA[[j]]$fileOut,append=TRUE)
-					}
+                    ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn], 
+                                               e, rep(ETA[[j]]$varB, pIn), varE, minAbsBeta, ncores)
+                    ETA[[j]]$b[mrkIn] = ans[[1]]
+                    e = ans[[2]]
+                  }
 
-					if(ETA[[j]]$model=='BRR')
-					{
-						write(ETA[[j]]$varB,file=ETA[[j]]$fileOut,append=TRUE)
-					}
-					
-					if(ETA[[j]]$model=='BL')
-					{
-						write(ETA[[j]]$lambda,file=ETA[[j]]$fileOut,append=TRUE)
-					}
-					
-					if(ETA[[j]]$model=='RKHS')
-					{
-						write(ETA[[j]]$varU,file=ETA[[j]]$fileOut,append=TRUE)
-					}
-					
-					if(ETA[[j]]$model=='BayesC')
-					{   
-					    tmp<-c(ETA[[j]]$probIn,ETA[[j]]$varB)
-						write(tmp,ncolumns=2,file=ETA[[j]]$fileOut,append=TRUE)
-					}
-					
-					if(ETA[[j]]$model=='BayesA')
-					{ 
-						# Nothing here for now
-					}						
-				}
-			}
-			write(x=mu,file=fileOutMu,append=TRUE)	
-			write(x=varE,file=fileOutVarE,append=TRUE)
-			
-			if(i>burnIn)
-			{	
-				nSums=nSums+1
-				k = (nSums - 1)/(nSums)
-				if(nLT>0)
-				{
-					for(j in 1:nLT)
-					{
-						if(ETA[[j]]$model=='FIXED')
-						{
-							ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
-							ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums					
-						}
-						
-						if(ETA[[j]]$model=='BRR')
-						{
-							ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
-							ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
-							ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
-							ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB^2)/nSums	
+                  if ((ETA[[j]]$p - pIn) > 0) {
+                    ETA[[j]]$b[(!mrkIn)] = rnorm(n = (ETA[[j]]$p - pIn), sd = sqrt(ETA[[j]]$varB))
+                  }
 
-						}	
-						
-						if(ETA[[j]]$model=='BL')
-						{
-							ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
-							ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
-							ETA[[j]]$post_tau2=ETA[[j]]$post_tau2*k+(ETA[[j]]$tau2)/nSums
-							ETA[[j]]$post_lambda = ETA[[j]]$post_lambda * k + (ETA[[j]]$lambda)/nSums
-						}
-						
-						if(ETA[[j]]$model=='RKHS')
-						{
-							ETA[[j]]$post_varU=ETA[[j]]$post_varU*k+ETA[[j]]$varU/nSums
-							ETA[[j]]$post_uStar=ETA[[j]]$post_uStar*k+ETA[[j]]$uStar/nSums
-							ETA[[j]]$post_u=ETA[[j]]$post_u*k+ETA[[j]]$u/nSums
-						}
-						
-						if(ETA[[j]]$model=='BayesC')
-						{
-							ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
-							ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
-							ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
-							ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB^2)/nSums
-							ETA[[j]]$post_d=ETA[[j]]$post_d*k+(ETA[[j]]$d)/nSums
-							ETA[[j]]$post_probIn=ETA[[j]]$post_probIn*k+(ETA[[j]]$probIn)/nSums
+                  #Update indicator variables #?# discuss this ##
+                  ans = .Call("d_e", ETA[[j]]$p, n, ETA[[j]]$X, ETA[[j]]$d, ETA[[j]]$b, e, varE, ETA[[j]]$probIn, ncores)
 
-						}
-						if(ETA[[j]]$model=='BayesA')
-						{
-							ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
-							ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
-							ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
-							ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB^2)/nSums
-						}
-						
-					}
-				}
-				
-				post_mu=post_mu*k+mu/nSums
-				post_mu2=post_mu2*k+(mu^2)/nSums
-			
-				post_yHat=post_yHat*k+yHat/nSums
-				post_yHat2=post_yHat2*k+(yHat^2)/nSums
-				
-				post_varE=post_varE*k +varE/nSums
-				post_varE2=post_varE2*k+(varE^2)/nSums
+                  ETA[[j]]$d = ans[[1]]
+                  e = ans[[2]]
 
-				if(response_type=="ordinal")
-				{
-					post_threshold=post_threshold*k+threshold/nSums
-					post_threshold2=post_threshold2*k+(threshold^2)/nSums
-				}
-			}
-		} # end of saving samples and computing running means
-	        if(verbose)
-		{		
-		   cat("---------------------------------------\n")
-		   tmp=proc.time()[3]
-		   cat(c(paste(c('  Iter=', 'Time/Iter=','varE='),round( c(i,c(tmp-time) ,varE),3),sep='')),'\n')
-  		   time = tmp
-  		}
-	}# end of Gibbs sampler
-  	
-  	#Closing files
-  	close(fileOutVarE)
-  	close(fileOutMu)
-  	
-  	if(nLT>0)
-  	{
-  		for(i in 1:nLT)
-		{
-			if(!is.null(ETA[[i]]$fileOut))
-			{			
-				close(ETA[[i]]$fileOut)  
-			}
-            		ETA[[i]]$fileOut=NULL
-  		}
-  	}
-  	
-  	#return goodies
-	if(response_type=="Bernoulli" | response_type=="ordinal")
-        {
-	  y=z
-	}
+                  #Update the variance of marker effects
+                  SS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0
+                  DF = ETA[[j]]$df0 + ETA[[j]]$p
+                  ETA[[j]]$varB = SS/rchisq(df = DF, n = 1)
+                  mrkIn = sum(ETA[[j]]$d)
+                  ETA[[j]]$probIn = rbeta(shape1 = (mrkIn + ETA[[j]]$countsIn + 1), 
+                                          shape2 = (ETA[[j]]$p - mrkIn + ETA[[j]]$countsOut + 1), n = 1)
+                }#End BayesC
 
-        out=list(y=y,whichNa=whichNa,saveAt=saveAt,nIter=nIter,burnIn=burnIn,thin=thin,minAbsBeta=minAbsBeta,weights=weights,ncores=ncores,verbose=verbose,response_type=response_type,df0=df0,S0=S0)
-	
-	out$yHat<-post_yHat
-	out$SD.yHat<-sqrt(post_yHat2-(post_yHat^2))
-	out$mu<-post_mu
-	out$SD.mu<-sqrt(post_mu2-post_mu^2)
-	out$varE<-post_varE
-	out$SD.varE<-sqrt(post_varE2-post_varE^2)
+                ## BayesA ##############################################################################
+                if (ETA[[j]]$model == "BayesA") {
+                  varBj = ETA[[j]]$varB
+                  ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
+                                             e, varBj, varE, minAbsBeta, ncores)
+                  ETA[[j]]$b = ans[[1]]
+                  e = ans[[2]]
+                   
+                  #Update variances
+                  SS <- ETA[[j]]$S0 + ETA[[j]]$b^2
+                  DF <- ETA[[j]]$df0 + 1
+                  ETA[[j]]$varB = SS/rchisq(n = ETA[[j]]$p, df = DF)
+                }#End BayesA
+            }#Loop for
+        }#nLT
+        
+        # yHat & missing values
+        # Now only for gaussian responses
+        yHat = yStar - e
+        if (nNa > 0) {
+            if (Censored) {
+                yStar[whichNa] = rtrun(mu = yHat[whichNa], a = a[whichNa], b = b[whichNa], sigma = sdE)
+            }
+            else {
+                yStar[whichNa] = yHat[whichNa] + rnorm(n = nNa, sd = sdE)
+            }
+            e[whichNa] = yStar[whichNa] - yHat[whichNa]
+        }
 
-	if(response_type=="ordinal")
-	{
-	  out$threshold=post_threshold[-c(1,nclass+1)]
-	  out$SD.threshold=sqrt(post_threshold2-post_threshold^2)[-c(1,nclass+1)]
-	}
-	
-        # Renaming and removing objects in ETA
-	if(nLT>0){
-		for(i in 1:nLT){
-			ETA[[i]]$b<-ETA[[i]]$post_b
-			ETA[[i]]$SD.b<-sqrt(ETA[[i]]$post_b2-ETA[[i]]$post_b^2)
-			tmp<-which(names(ETA[[i]])%in%c('post_b','post_b2'))
-			ETA[[i]]<-ETA[[i]][-tmp]
-			
-			#if(ETA[[i]]$model%in%c('BRR','BayesA','BayesC')){ # Need to complete this part
-			#	ETA[[i]]$varB<-ETA[[i]]$post_varB
-			#	ETA[[i]]$SD.varB<-ETA[[i]]$post_varB2-(ETA[[i]]$post_varB^2)
-			#	tmp<-which(names(ETA[[i]])%in%c('post_varB','post_varB2'))
-			#	ETA[[i]]<-ETA[[i]][-tmp]
-			#	
-			#}
-		}
-		out$ETA=ETA
-	}
-    class(out)="BGLR"
+        # residual variance for Gaussian
+        # and Bernoulli families
+        if (response_type == "gaussian") {
+            SS = sum(e * e) + S0 + deltaSS
+            DF = n + df0 + deltadf
+            varE = SS/rchisq(n = 1, df = DF)
+            sdE = sqrt(varE)
+        }
+
+        if (response_type == "Bernoulli") {
+            varE = 1
+            sdE = 1
+
+            #Update yStar, this is the latent variable
+            yStar[whichOne] = rtrun(mu = yHat[whichOne], sigma = rep(1, none), a = rep(0, none), b = rep(Inf, none))
+            yStar[whichZero] = rtrun(mu = yHat[whichZero], sigma = rep(1, nzero), a = rep(-Inf, nzero), b = rep(0, nzero))
+
+            #Update error
+            e = yStar - yHat
+        }
+
+        if (response_type == "ordinal") {
+            varE = 1
+            sdE = 1
+            
+            #Update yStar, this is the latent variable
+            for (m in 1:n) {
+                yStar[m] = rtrun(mu = yHat[m], sigma = 1, a = threshold[z[m]], b = threshold[z[m] + 1])
+            }
+
+            #Update thresholds
+            for (m in 2:nclass) {
+                lo = max(max(extract(yStar, z, m - 1)), threshold[m - 1])
+                hi = min(min(extract(yStar, z, m)), threshold[m + 1])
+                threshold[m] = runif(1, lo, hi)
+            }
+
+            #Update error
+            e = yStar - yHat
+        }
+
+        # Saving samples and computing running means
+        if ((i%%thin == 0)) {
+            if (nLT > 0) {
+                for (j in 1:nLT) {
+
+                  if (ETA[[j]]$model == "FIXED") {
+                    write(ETA[[j]]$b, file = ETA[[j]]$fileOut, append = TRUE)
+                  }
+
+                  if (ETA[[j]]$model == "BRR") {
+                    write(ETA[[j]]$varB, file = ETA[[j]]$fileOut, append = TRUE)
+                  }
+
+                  if (ETA[[j]]$model == "BL") {
+                    write(ETA[[j]]$lambda, file = ETA[[j]]$fileOut, append = TRUE)
+                  }
+
+                  if (ETA[[j]]$model == "RKHS") {
+                    write(ETA[[j]]$varU, file = ETA[[j]]$fileOut, append = TRUE)
+                  }
+
+                  if (ETA[[j]]$model == "BayesC") {
+                    tmp <- c(ETA[[j]]$probIn, ETA[[j]]$varB)
+                    write(tmp, ncolumns = 2, file = ETA[[j]]$fileOut, append = TRUE)
+                  }
+
+                  if (ETA[[j]]$model == "BayesA") {
+                    # Nothing here for now
+                  }
+                }
+            }
+            write(x = mu, file = fileOutMu, append = TRUE)
+            write(x = varE, file = fileOutVarE, append = TRUE)
+            if (i > burnIn) {
+                nSums = nSums + 1
+                k = (nSums - 1)/(nSums)
+                if (nLT > 0) {
+                  for (j in 1:nLT) {
+
+                    if (ETA[[j]]$model == "FIXED") {
+                      ETA[[j]]$post_b = ETA[[j]]$post_b * k + ETA[[j]]$b/nSums
+                      ETA[[j]]$post_b2 = ETA[[j]]$post_b2 * k + (ETA[[j]]$b^2)/nSums
+                    }
+
+                    if (ETA[[j]]$model == "BRR") {
+                      ETA[[j]]$post_b = ETA[[j]]$post_b * k + ETA[[j]]$b/nSums
+                      ETA[[j]]$post_b2 = ETA[[j]]$post_b2 * k + (ETA[[j]]$b^2)/nSums
+                      ETA[[j]]$post_varB = ETA[[j]]$post_varB * k + (ETA[[j]]$varB)/nSums
+                      ETA[[j]]$post_varB2 = ETA[[j]]$post_varB2 * k + (ETA[[j]]$varB^2)/nSums
+                    }
+
+                    if (ETA[[j]]$model == "BL") {
+                      ETA[[j]]$post_b = ETA[[j]]$post_b * k + ETA[[j]]$b/nSums
+                      ETA[[j]]$post_b2 = ETA[[j]]$post_b2 * k + (ETA[[j]]$b^2)/nSums
+                      ETA[[j]]$post_tau2 = ETA[[j]]$post_tau2 * k + (ETA[[j]]$tau2)/nSums
+                      ETA[[j]]$post_lambda = ETA[[j]]$post_lambda * k + (ETA[[j]]$lambda)/nSums
+                    }
+
+                    if (ETA[[j]]$model == "RKHS") {
+                      ETA[[j]]$post_varU = ETA[[j]]$post_varU * k + ETA[[j]]$varU/nSums
+                      ETA[[j]]$post_uStar = ETA[[j]]$post_uStar * k + ETA[[j]]$uStar/nSums
+                      ETA[[j]]$post_u = ETA[[j]]$post_u * k + ETA[[j]]$u/nSums
+                    }
+
+                    if (ETA[[j]]$model == "BayesC") {
+                      ETA[[j]]$post_b = ETA[[j]]$post_b * k + ETA[[j]]$b/nSums
+                      ETA[[j]]$post_b2 = ETA[[j]]$post_b2 * k + (ETA[[j]]$b^2)/nSums
+                      ETA[[j]]$post_varB = ETA[[j]]$post_varB * k + (ETA[[j]]$varB)/nSums
+                      ETA[[j]]$post_varB2 = ETA[[j]]$post_varB2 * k + (ETA[[j]]$varB^2)/nSums
+                      ETA[[j]]$post_d = ETA[[j]]$post_d * k + (ETA[[j]]$d)/nSums
+                      ETA[[j]]$post_probIn = ETA[[j]]$post_probIn * k + (ETA[[j]]$probIn)/nSums
+                    }
+
+                    if (ETA[[j]]$model == "BayesA") {
+                      ETA[[j]]$post_b = ETA[[j]]$post_b * k + ETA[[j]]$b/nSums
+                      ETA[[j]]$post_b2 = ETA[[j]]$post_b2 * k + (ETA[[j]]$b^2)/nSums
+                      ETA[[j]]$post_varB = ETA[[j]]$post_varB * k + (ETA[[j]]$varB)/nSums
+                      ETA[[j]]$post_varB2 = ETA[[j]]$post_varB2 * k + (ETA[[j]]$varB^2)/nSums
+                    }
+
+                  }
+                }
+
+                post_mu = post_mu * k + mu/nSums
+                post_mu2 = post_mu2 * k + (mu^2)/nSums
+
+                post_yHat = post_yHat * k + yHat/nSums
+                post_yHat2 = post_yHat2 * k + (yHat^2)/nSums
+
+                post_varE = post_varE * k + varE/nSums
+                post_varE2 = post_varE2 * k + (varE^2)/nSums
+
+                if (response_type == "ordinal") {
+                  post_threshold = post_threshold * k + threshold/nSums
+                  post_threshold2 = post_threshold2 * k + (threshold^2)/nSums
+                }
+
+                if (response_type == "gaussian") {
+                  tmpE = e/weights
+                  tmpSD = sqrt(varE)/weights
+
+                  if (nNa > 0) {
+                    tmpE = tmpE[-whichNa]
+                    tmpSD = tmpSD[-whichNa]
+                  }
+
+                  logLik = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
+                  post_logLik = post_logLik * k + logLik/nSums
+                }#end gaussian
+            }
+        }#end of saving samples and computing running means
+
+        if (verbose) {
+            cat("---------------------------------------\n")
+            tmp = proc.time()[3]
+            cat(c(paste(c("  Iter=", "Time/Iter=", "varE="), round(c(i, c(tmp - time), varE), 3), sep = "")), "\n")
+            time = tmp
+        }
+    }#end of Gibbs sampler
+
+    #Closing files
+    close(fileOutVarE)
+    close(fileOutMu)
+
+    if (nLT > 0) {
+        for (i in 1:nLT) {
+            if (!is.null(ETA[[i]]$fileOut)) {
+                close(ETA[[i]]$fileOut)
+            }
+            ETA[[i]]$fileOut = NULL
+        }
+    }
+    
+    #return goodies
+    if (response_type == "Bernoulli" | response_type == "ordinal") {
+        y = z
+    }
+
+    out = list(y = y, whichNa = whichNa, saveAt = saveAt, nIter = nIter, 
+               burnIn = burnIn, thin = thin, minAbsBeta = minAbsBeta, 
+               weights = weights, ncores = ncores, verbose = verbose, 
+               response_type = response_type, df0 = df0, S0 = S0)
+
+    out$yHat <- post_yHat
+    out$SD.yHat <- sqrt(post_yHat2 - (post_yHat^2))
+    out$mu <- post_mu
+    out$SD.mu <- sqrt(post_mu2 - post_mu^2)
+    out$varE <- post_varE
+    out$SD.varE <- sqrt(post_varE2 - post_varE^2)
+    
+    #goodness of fit
+    tmpE = (yStar - post_yHat)/weights
+    tmpSD = sqrt(post_varE)/weights
+    
+    if (nNa > 0) {
+        tmpE = tmpE[-whichNa]
+        tmpSD = tmpSD[-whichNa]
+    }
+    
+    out$fit = list()
+    out$fit$logLikAtPostMean = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
+    out$fit$postMeanLogLik = post_logLik
+    out$fit$pD = -2 * (post_logLik - out$fit$logLikAtPostMean)
+    out$fit$DIC = out$fit$pD - 2 * post_logLik
+
+    if (response_type == "ordinal") {
+        out$threshold = post_threshold[-c(1, nclass + 1)]
+        out$SD.threshold = sqrt(post_threshold2 - post_threshold^2)[-c(1, nclass + 1)]
+    }
+
+    # Renaming and removing objects in ETA
+    if (nLT > 0) {
+        for (i in 1:nLT) {
+
+            if (ETA[[i]]$model != "RKHS") {
+                ETA[[i]]$b <- ETA[[i]]$post_b
+                ETA[[i]]$SD.b <- sqrt(ETA[[i]]$post_b2 - ETA[[i]]$post_b^2)
+                tmp <- which(names(ETA[[i]]) %in% c("post_b", 
+                  "post_b2"))
+                ETA[[i]] <- ETA[[i]][-tmp]
+            }
+
+            if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC")) {
+                ETA[[i]]$varB <- ETA[[i]]$post_varB
+                ETA[[i]]$SD.varB <- ETA[[i]]$post_varB2 - (ETA[[i]]$post_varB^2)
+                tmp <- which(names(ETA[[i]]) %in% c("post_varB", 
+                  "post_varB2"))
+                ETA[[i]] <- ETA[[i]][-tmp]
+            }
+        }
+        out$ETA = ETA
+    }
+    class(out) = "BGLR"
     return(out)
 }
+
 
 #This function will be a wrapper for BGLR
 #the idea is to maintain the compatibility with the function BLR in 
@@ -1111,80 +1089,99 @@ BGLR=function(y,response_type="gaussian",a=NULL, b=NULL,
 
 #FIXME: thin2 parameter is missing in BGLR
 
-BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
-    A = NULL), prior = NULL, nIter = 1100, burnIn = 100, thin = 10,
-    thin2 = 1e+10, saveAt = "", minAbsBeta = 1e-09, weights = NULL,ncores=1)
+BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL, 
+    A = NULL), prior = NULL, nIter = 1100, burnIn = 100, thin = 10, 
+    thin2 = 1e+10, saveAt = "", minAbsBeta = 1e-09, weights = NULL, 
+    ncores = 1) 
 {
-
-   ETA=NULL
-   ETA=list()
-   nLT=0
-  
-   cat("Setting parameters for BGLR...\n")
-  
-   if (is.null(prior)){ 
+    ETA = NULL
+    ETA = list()
+    nLT = 0
+    cat("Setting parameters for BGLR...\n")
+    if (is.null(prior)) {
         cat("===============================================================\n")
         cat("No prior was provided, BGLR will be running with improper priors.\n")
         cat("===============================================================\n")
-        prior = list(varE  = list(Se=NULL,dfe=1),
-                     varBR = list(S = 0,df = 0),
-		     varU =  list(S = 0, df = 0),
-		     lambda = list(shape = 0,rate = 0, type = "random", value = 50))
-   }
+        prior = list(varE = list(S = NULL, df = 1), varBR = list(S = 0, 
+            df = 0), varU = list(S = 0, df = 0), lambda = list(shape = 0, 
+            rate = 0, type = "random", value = 50))
+    }
+    if (!is.null(XF)) {
+        nLT = nLT + 1
+        ETA[[nLT]] = list(X = XF, model = "FIXED")
+    }
+    if (!is.null(XR)) {
+        nLT = nLT + 1
+        ETA[[nLT]] = list(X = XR, model = "BRR", df0 = prior$varBR$df, 
+            S0 = prior$varBR$S)
+    }
+    if (!is.null(XL)) {
+        nLT = nLT + 1
+        if (prior$lambda$type == "random") {
+            if (is.null(prior$lambda$rate)) {
+                cat("Setting prior for lambda^2 to beta\n")
+                prior$lambda$type = "beta"
+                prior$lambda$shape = NULL
+                prior$lambda$rate = NULL
+            }
+            else {
+                cat("Setting prior for lambda^2 to gamma\n")
+                prior$lambda$type = "gamma"
+                prior$lambda$max = NULL
+                prior$lambda$shape1 = NULL
+                prior$lambda$shape2 = NULL
+            }
+        }
+        ETA[[nLT]] = list(X = XL, model = "BL", type = prior$lambda$type, 
+            rate = prior$lambda$rate, shape = prior$lambda$shape, 
+            max = prior$lambda$max, shape1 = prior$lambda$shape1, 
+            shape2 = prior$lambda$shape2, lambda = prior$lambda$value)
+    }
 
-   if(!is.null(XF))
-   {
-   	  nLT=nLT+1
-   	  ETA[[nLT]]=list(X=XF, model="FIXED")
-   }
-   if(!is.null(XR))
-   {
-   	  nLT=nLT+1
-   	  ETA[[nLT]]=list(X=XR, model="BRR",df0=prior$varBR$df0,S0=prior$varBR$S0)
-   }
-   if(!is.null(XL))
-   {
-   	  nLT=nLT+1;
-          if(prior$lambda$type=="random")
-          {
-             if(is.null(prior$lambda$rate))
-             {
-                cat("Setting prior for lambda^2 to beta\n");
-                prior$lambda$type="beta";
-                prior$lambda$shape=NULL; 
-                prior$lambda$rate=NULL;
-             }else{
-                cat("Setting prior for lambda^2 to gamma\n");
-                prior$lambda$type="gamma";
-                prior$lambda$max=NULL;
-                prior$lambda$shape1=NULL;
-                prior$lambda$shape2=NULL;
-             }
-          }
-          ETA[[nLT]]=list(X=XL,model="BL",type=prior$lambda$type,
-                          rate=prior$lambda$rate,shape=prior$lambda$shape,
-                          max=prior$lambda$max, shape1=prior$lambda$shape1, shape2=prior$lambda$shape2,
-                          lambda=prior$lambda$value);
-   }
-  
-   #FIXME: In original BLR IDS are used to buid A matrix Z,
-   #and then run the model y=Zu+e, u~MN(0,varU*A), and then using the Cholesky factorizatio
-   #it was possible to fit the model. The algorithm used here is different (Orthogonal variables
-   #and it may be that the IDS are not longer necessary
-  
-   if(!is.null(GF[[1]]))
-   {   
-   	   nLT=nLT+1
-   	   ETA[[nLT]]=list(K=GF$A,model='RKHS',df0=prior$varU$df0,S0=prior$varU$S0)
-   }
-  
-   cat("Finish setting parameters for BGLR\n")
+    #FIXME: In original BLR IDS are used to buid A matrix Z,
+    #and then run the model y=Zu+e, u~MN(0,varU*A), and then using the Cholesky factorizatio
+    #it was possible to fit the model. The algorithm used here is different (Orthogonal variables
+    #and it may be that the IDS are not longer necessary
 
-   cat("Fitting model using BGLR...\n")
-  
-   #Return the goodies
-   return(BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,minAbsBeta=minAbsBeta,weights=weights,ncores=ncores))
+    if (!is.null(GF[[1]])) {
+        nLT = nLT + 1
+        ETA[[nLT]] = list(K = GF$A, model = "RKHS", df0 = prior$varU$df, 
+            S0 = prior$varU$S)
+    }
 
+    cat("Finish setting parameters for BGLR\n")
+    cat("Fitting model using BGLR...\n")
+    out = BGLR(y = y, ETA = ETA, df0 = prior$varE$df, S0 = prior$varE$S, 
+               nIter = nIter, burnIn = burnIn, thin = thin, saveAt = saveAt, 
+               minAbsBeta = minAbsBeta, weights = weights, ncores = ncores)
+
+    #Backward compatibility with BLR
+    if (nLT > 0) {
+        for (j in 1:nLT) {
+            if (ETA[[j]]$model == "FIXED") {
+                out$bF = out$ETA[[j]]$b
+                out$SD.bF = out$ETA[[j]]$SD.b
+            }
+            if (ETA[[j]]$model == "BL") {
+                out$bL = out$ETA[[j]]$b
+                out$SD.bL = out$ETA[[j]]$SD.b
+            }
+            if (ETA[[j]]$model == "BRR") {
+                out$bR = out$ETA[[j]]$b
+                out$SD.bR = out$ETA[[j]]$SD.b
+                out$varBR = out$ETA[[j]]$varB
+                out$SD.bR = out$ETA[[j]]$SD.varB
+            }
+            if (ETA[[j]]$model == "RKHS") {
+                out$u = out$ETA[[j]]$post_u
+                out$SD.u = NULL
+                out$varU = out$ETA[[j]]$post_varU
+            }
+        }
+    }
+    out$ETA = NULL
+    class(out) = "BLR"
+    return(out)
 }
 
 

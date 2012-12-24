@@ -15,10 +15,10 @@ nIter=500;
 burnIn=100;
 thin=3;
 saveAt='';
-Se=NULL;
+S0=NULL;
 weights=NULL;
 R2=0.5;
 ETA<-list(list(X=wheat.X,model='BEN'))
   
-fit_BL=BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,dfe=5,Se=Se,weights=weights,R2=R2)
+fit_BL=BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,df0=5,S0=S0,weights=weights,R2=R2)
 plot(fit_BL$yHat,y)

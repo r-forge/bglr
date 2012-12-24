@@ -209,6 +209,8 @@ burnIn<-500
 thin<-10
 folds<-10
 y<-wheat.Y[,1]
+A<-wheat.A
+
 priorBL<-list(
                varE=list(df=3,S=2.5),
                varU=list(df=3,S=0.63),

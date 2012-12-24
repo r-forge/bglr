@@ -1,0 +1,5 @@
+#1.- Uniformize notation in BLR and BGLR in particular df0 should be changed to df, S0 
+     should be changed to S
+#2.- Activate BayesB
+#3.- Activate/Delete BEN
+
