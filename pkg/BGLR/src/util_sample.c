@@ -286,3 +286,93 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
 
   return(list);  
 }
+
+
+/*
+Routines rgauss, rinvGauss and rinvGaussR taken from 
+Package: SuppDists
+Version: 1.1-8
+Date: 2009/12/09
+Title: Supplementary distributions
+Author: Bob Wheeler <bwheelerg@gmail.com>
+*/
+
+void rgauss(double* normArray, int n, double mean, double sd)
+{
+        int i;
+        GetRNGstate();
+        for (i=0;i<n;i++) normArray[i]=rnorm(mean,sd);
+        PutRNGstate();
+}
+
+
+/*
+random inverse Gaussian values
+Follows Mitchael,J.R., Schucany, W.R. and Haas, R.W. (1976). Generating
+random roots from variates using transformations with multiple roots.
+American Statistician. 30-2. 88-91.
+*/
+
+void rinvGauss(double* normArray,int n,double mu,double lambda)
+{ 
+        double b=0.5*mu/lambda;
+        double a=mu*b;
+        double c=4.0*mu*lambda;
+        double d=mu*mu;
+
+        rgauss(normArray,n,0,1);
+        GetRNGstate();
+        for (int i=0;i<n;i++) {
+                if (mu<=0 || lambda<=0) {
+                        normArray[i]=NA_REAL;
+                }
+                else {
+                        double u=unif_rand();
+                        double v=normArray[i]*normArray[i];     // Chi-square with 1 df
+                        double x=mu+a*v-b*sqrt(c*v+d*v*v);      // Smallest root
+                        normArray[i]=(u<(mu/(mu+x)))?x:d/x;     // Pick x with prob mu/(mu+x), else d/x;
+                        if (normArray[i]<0.0){
+                                v=x;
+                        }
+                }
+        }
+        PutRNGstate();
+}
+
+// Random function for R
+void rinvGaussR(
+        double *nup,
+        double *lambdap,
+        int *Np,
+        int *Mp,        // length of nup and lambdap
+        double *valuep
+)
+{
+        int N=*Np;
+        int M=*Mp;
+        int D;
+        int j;
+        int k;
+        int loc;
+        int cloc;
+        double *tArray;
+
+        if (M==1)
+                rinvGauss(valuep,N,*nup,*lambdap);
+        else { // Allow for random values for each element of nu and lambda
+                D=(N/M)+((N%M)?1:0);
+                tArray=(double *)S_alloc((long)D,sizeof(double));
+                loc=0;
+                for (j=0;j<M;j++) {
+                        rinvGauss(tArray,D,nup[j],lambdap[j]);
+                        for (k=0;k<D;k++) {
+                                cloc=loc+k*M;
+                                if (cloc<N)
+                                        valuep[cloc]=tArray[k];
+                                else break;
+                        }
+                        loc++;
+                }
+        }
+}
+

@@ -479,7 +479,6 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
 #b: upper bound
 #NOTES: 1) This routine was taken from bayesm package, December 18, 2012
 #       2) The inputs are not checked
-
 rtrun=function (mu, sigma, a, b) 
 {
     FA = pnorm(((a - mu)/sigma))
@@ -490,6 +489,26 @@ rtrun=function (mu, sigma, a, b)
 #Extract the values of z such that y[i]=j
 #z,y vectors, j integer
 extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
+
+#Random number from inverse gaussian distribution
+#Taken from SuppDists package, version 1.1-8, by Bob Wheeler <bwheelerg@gmail.com>
+#arguments:
+#n is sample size
+#nu vector real and non-negative parameter -- the Wald distribution results when nu=1
+#lambda vector real and non-negative parameter
+#
+#Density function
+#f(x,nu,lambda)=sqrt[lambda/(2 pi x^3)]exp[-lambda(x-nu)^2/(2 x nu^2)]
+rinvGauss <-function (n, nu, lambda)
+{
+    n <- if (length(n) > 1)
+        length(n)
+    else n
+    N <- max(length(nu), length(lambda))
+    nu <- rep(nu, length.out = N)
+    lambda <- rep(lambda, length.out = N)
+    .C("rinvGaussR", as.double(nu), as.double(lambda), as.integer(n), as.integer(N), value = double(n))$value
+}
 
 ##################################################################################################
 
@@ -917,6 +936,8 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   }
                 }
             }
+
+            #Output files
             write(x = mu, file = fileOutMu, append = TRUE)
             write(x = varE, file = fileOutVarE, append = TRUE)
             if (i > burnIn) {
@@ -983,7 +1004,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   post_threshold2 = post_threshold2 * k + (threshold^2)/nSums
                 }
 
-                if (response_type == "gaussian") {
+                if(response_type == "gaussian") {
                   tmpE = e/weights
                   tmpSD = sqrt(varE)/weights
 
@@ -991,10 +1012,27 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                     tmpE = tmpE[-whichNa]
                     tmpSD = tmpSD[-whichNa]
                   }
+                  
+	          logLik = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
 
-                  logLik = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
-                  post_logLik = post_logLik * k + logLik/nSums
                 }#end gaussian
+
+		if(response_type== "Bernoulli")
+                {
+		    #Be careful, the vector with the original response here is z
+		    if (nNa > 0) {
+                        pSuccess <- pnorm(mean = 0, sd = 1, q = yHat[-whichNa])
+                        tmp <- z[-whichNa]
+                        logLik <- sum(log(ifelse(z[-whichNa] == 0, (1 - pSuccess), pSuccess)))
+                  }
+                  else {
+                        pSuccess <- pnorm(mean = 0, sd = 1, q = yHat)
+                        tmp <- z[-whichNa]
+                        logLik <- sum(log(ifelse(z == 0, (1 - pSuccess), pSuccess)))
+                  }
+                }
+
+                post_logLik = post_logLik * k + logLik/nSums
             }
         }#end of saving samples and computing running means
 
@@ -1037,16 +1075,43 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     out$SD.varE <- sqrt(post_varE2 - post_varE^2)
     
     #goodness of fit
-    tmpE = (yStar - post_yHat)/weights
-    tmpSD = sqrt(post_varE)/weights
-    
-    if (nNa > 0) {
-        tmpE = tmpE[-whichNa]
-        tmpSD = tmpSD[-whichNa]
-    }
-    
+    #Now only for uncensored gaussian samples
+    #FIXME: Censored missing in gaussian responses
+    #       Ordinal missing
     out$fit = list()
-    out$fit$logLikAtPostMean = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
+    
+    if(response_type=="gaussian")
+    {
+    	tmpE = (yStar - post_yHat)/weights
+    	tmpSD = sqrt(post_varE)/weights
+    
+    	if (nNa > 0) {
+        	tmpE = tmpE[-whichNa]
+        	tmpSD = tmpSD[-whichNa]
+    	}
+    	out$fit$logLikAtPostMean = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
+
+	if (Censored) {
+            cdfA <- pnorm(q = a[whichNa], sd = sqrt(post_varE), mean = post_yHat[whichNa])
+            cdfB <- pnorm(q = b[whichNa], sd = sqrt(post_varE), mean = post_yHat[whichNa])
+            out$fit$logLikAtPostMean <- out$fit$logLikAtPostMean + sum(log(cdfB - cdfA))
+        }
+    }
+   
+    if(response_type=="Bernoulli")
+    {
+	#Be careful, now the vector with response is y
+	if(nNa>0)
+        {
+	   pSuccess <- pnorm(mean = 0, sd = 1, q = post_yHat[-whichNa])
+           out$fit$logLikAtPostMean <- sum(log(ifelse(y[-whichNa] == 0, (1 - pSuccess), pSuccess)))
+        }else
+        {
+           pSuccess <- pnorm(mean = 0, sd = 1, q = post_yHat)
+           out$fit$logLikAtPostMean <- sum(log(ifelse(y == 0, (1 - pSuccess), pSuccess)))
+        }
+    }
+
     out$fit$postMeanLogLik = post_logLik
     out$fit$pD = -2 * (post_logLik - out$fit$logLikAtPostMean)
     out$fit$DIC = out$fit$pD - 2 * post_logLik
@@ -1063,16 +1128,14 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
             if (ETA[[i]]$model != "RKHS") {
                 ETA[[i]]$b <- ETA[[i]]$post_b
                 ETA[[i]]$SD.b <- sqrt(ETA[[i]]$post_b2 - ETA[[i]]$post_b^2)
-                tmp <- which(names(ETA[[i]]) %in% c("post_b", 
-                  "post_b2"))
+                tmp <- which(names(ETA[[i]]) %in% c("post_b", "post_b2"))
                 ETA[[i]] <- ETA[[i]][-tmp]
             }
 
             if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC")) {
                 ETA[[i]]$varB <- ETA[[i]]$post_varB
                 ETA[[i]]$SD.varB <- ETA[[i]]$post_varB2 - (ETA[[i]]$post_varB^2)
-                tmp <- which(names(ETA[[i]]) %in% c("post_varB", 
-                  "post_varB2"))
+                tmp <- which(names(ETA[[i]]) %in% c("post_varB", "post_varB2"))
                 ETA[[i]] <- ETA[[i]][-tmp]
             }
         }
@@ -1133,9 +1196,9 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
             }
         }
         ETA[[nLT]] = list(X = XL, model = "BL", type = prior$lambda$type, 
-            rate = prior$lambda$rate, shape = prior$lambda$shape, 
-            max = prior$lambda$max, shape1 = prior$lambda$shape1, 
-            shape2 = prior$lambda$shape2, lambda = prior$lambda$value)
+                          rate = prior$lambda$rate, shape = prior$lambda$shape, 
+                          max = prior$lambda$max, shape1 = prior$lambda$shape1, 
+                          shape2 = prior$lambda$shape2, lambda = prior$lambda$value)
     }
 
     #FIXME: In original BLR IDS are used to buid A matrix Z,
@@ -1174,7 +1237,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
             }
             if (ETA[[j]]$model == "RKHS") {
                 out$u = out$ETA[[j]]$post_u
-                out$SD.u = NULL
+                out$SD.u = NULL  #FIXME
                 out$varU = out$ETA[[j]]$post_varU
             }
         }
