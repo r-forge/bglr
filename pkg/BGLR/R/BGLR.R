@@ -5,9 +5,17 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 	
-    if(any(is.na(LT$X))){ stop(paste('LP ',j,' has NAs in X',sep=''))}
-    if(nrow(LT$X)!=n){stop(paste('   Number of rows of LP ',j,'  not equal to the number of phenotypes.',sep=''))}
- 
+    if(any(is.na(LT$X)))
+    { 
+	stop(paste(" LP ",j," has NAs in X",sep=""))
+    }
+
+    if(nrow(LT$X)!=n)
+    {
+        stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
+    }
+    
+    #weights
     for (i in 1:n) 
     { 
       LT$X[i, ] = weights[i] * LT$X[i, ]  
@@ -23,9 +31,15 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
     LT$b=rep(0,LT$p)
     LT$post_b=rep(0,LT$p)
     LT$post_b2=rep(0,LT$p)
-    fname=paste(saveAt,'ETA_',j,'_b.dat',sep='')
-    LT$NamefileOut=fname; if(rmExistingFiles){ unlink(fname) }
-    LT$fileOut=file(description=fname,open='w')
+    fname=paste(saveAt,"ETA_",j,"_b.dat",sep="")
+    LT$NamefileOut=fname; 
+
+    if(rmExistingFiles)
+    { 
+       unlink(fname) 
+    }
+
+    LT$fileOut=file(description=fname,open="w")
     LT$X=as.vector(LT$X)
     LT$varB=1e10
     return(LT)
@@ -38,10 +52,21 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 	
-    if(any(is.na(LT$X))){ stop(paste('LP ',j,' has NAs in X',sep=''))}
-    if(nrow(LT$X)!=n){stop(paste('   Number of rows of LP ',j,'  not equal to the number of phenotypes.',sep=''))}
+    if(any(is.na(LT$X)))
+    { 
+      stop(paste(" LP ",j," has NAs in X",sep=""))
+    }
+    
+    if(nrow(LT$X)!=n)
+    {
+      stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
+    }
  
-    for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
+    #weights
+    for (i in 1:n) 
+    { 
+       LT$X[i, ] = weights[i]*LT$X[i, ]  
+    }
 	
     LT$x2=rep(0,LT$p)
     sumMeanXSq=0
@@ -55,14 +80,19 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     if(is.null(LT$df0))
     {
 	LT$df0=5
-	cat(paste('   Degree of freedom of LP ',j,'  set to default value (',LT$df0,').\n',sep=''))
+	cat(paste(" Degree of freedom of LP ",j,"  set to default value (",LT$df0,").\n",sep=""))
     }
-    if(is.null(LT$R2)){ LT$R2<-R2/nLT}
+
+    if(is.null(LT$R2))
+    { 
+        LT$R2=R2/nLT
+    }
+
     if(is.null(LT$S0))
     {
 	LT$MSx=sum(LT$x2)/n-sumMeanXSq       
 	LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(LT$MSx))*(LT$df0-2)  
-	cat(paste('   Scale parameter of LP ',j,'  set to default value (',LT$S0,') .\n',sep=''))
+	cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
     }
 	
     LT$b=rep(0,LT$p)
@@ -71,10 +101,17 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$varB=LT$S0/(LT$df0-2)
     LT$post_varB=0                 
     LT$post_varB2=0
-    fname=paste(saveAt,'ETA_',j,'_varB.dat',sep='') ; if(rmExistingFiles){ unlink(fname) }
+    fname=paste(saveAt,"ETA_",j,"_varB.dat",sep=""); 
+    
+    if(rmExistingFiles)
+    { 
+       unlink(fname) 
+    }
+
     LT$NamefileOut=fname
-    LT$fileOut=file(description=fname,open='w')
+    LT$fileOut=file(description=fname,open="w")
     LT$X=as.vector(LT$X)
+
     return(LT)
 }
 
@@ -84,10 +121,21 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 		
-    if(any(is.na(LT$X))){stop(paste('LP ',j,' has NAs in X',sep=''))}
-    if(nrow(LT$X)!=n){stop(paste('   Number of rows of LP ',j,'  not equal to the number of phenotypes.',sep=''))}
+    if(any(is.na(LT$X)))
+    {
+       stop(paste("LP ",j," has NAs in X",sep=""))
+    }
+
+    if(nrow(LT$X)!=n)
+    {
+        stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
+    }
  
-    for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
+    #weights
+    for (i in 1:n) 
+    { 
+       LT$X[i, ] = weights[i]*LT$X[i, ]  
+    }
 	
     LT$x2=rep(0,LT$p)
     sumMeanXSq=0
@@ -99,63 +147,68 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$MSx=sum(LT$x2)/n-sumMeanXSq
 
     # Prior
-    if(is.null(LT$R2)){ LT$R2<-R2/nLT}
+    if(is.null(LT$R2))
+    { 
+       LT$R2=R2/nLT
+    }
 	
     # Setting default value of lambda
     if(!is.null(LT$lambda))
     { 
     	if(LT$lambda<0)
         {
-		stop("lambda should be positive\n")
+		stop(" lambda should be positive\n")
 	}  
     }
     if(is.null(LT$lambda))
     {
 		LT$lambda2=2*(1-R2)/(LT$R2)*LT$MSx
 		LT$lambda=sqrt(LT$lambda2)
-		cat(paste('  Initial value of lambda in LP ',j,' was set to default value (',LT$lambda,')\n',sep=''))
+		cat(paste(" Initial value of lambda in LP ",j," was set to default value (",LT$lambda,")\n",sep=""))
     }else{
-	if(LT$lambda<0) stop("lambda should be positive\n");
+	if(LT$lambda<0) stop(" lambda should be positive\n");
         LT$lambda2=LT$lambda^2
     }
 	
     # Checking lambda-type
     if(is.null(LT$type))
     {
-		LT$type='gamma'
-		cat(paste('  By default, the prior density of lambda^2 in the LP ',j,'  was set to gamma.\n',sep=''))
+		LT$type="gamma"
+		cat(paste("  By default, the prior density of lambda^2 in the LP ",j,"  was set to gamma.\n",sep=""))
     }else{
-		if(!LT$type%in%c("gamma","beta","fixed")) stop("The prior for lambda^2 should be gamma, beta or a point of mass (i.e., fixed lambda).\n")
+		if(!LT$type%in%c("gamma","beta","fixed")) stop(" The prior for lambda^2 should be gamma, beta or a point of mass (i.e., fixed lambda).\n")
     }
-    if(LT$type=='gamma')
+    if(LT$type=="gamma")
     {
-		if(is.null(LT$shape)){
+		if(is.null(LT$shape))
+                {
 			 LT$shape=1.1
-			 cat(paste('  shape parameter in LP ',j,' was missing and was set to ',LT$shape,'\n',sep=''))
+			 cat(paste("  shape parameter in LP ",j," was missing and was set to ",LT$shape,"\n",sep=""))
 		}
 		
-		if(is.null(LT$rate)){
+		if(is.null(LT$rate))
+                {
 			 LT$rate=(LT$shape-1)/LT$lambda2
-			 cat(paste('  rate parameter in LP ',j,' was missing and was set to ',LT$rate,'\n',sep=''))
+			 cat(paste("  rate parameter in LP ",j," was missing and was set to ",LT$rate,"\n",sep=""))
 		}	
     }
     
-    if(LT$type=='beta')
+    if(LT$type=="beta")
     {
 		if(is.null(LT$shape1))
 		{
 		    LT$shape1=1
-		    cat(paste('  shape1 parameter in LP ',j,' was missing and was set to ',LT$shape1,'\n',sep=''))
+		    cat(paste("  shape1 parameter in LP ",j," was missing and was set to ",LT$shape1,"\n",sep=""))
 		}
 		if(is.null(LT$shape2))
 		{
 		    LT$shape2=1
-		    cat(paste('  shape2 parameter in LP ',j,' was missing and was set to ',LT$shape1,'\n',sep=''))
+		    cat(paste("  shape2 parameter in LP ",j," was missing and was set to ",LT$shape1,"\n",sep=""))
 		}
 		if(is.null(LT$max))
 		{
 		    LT$max=10*LT$lambda
-		    cat(paste('  max parameter in LP ',j,' was missing and was set to ',LT$max,'\n',sep=''))
+		    cat(paste("  max parameter in LP ",j," was missing and was set to ",LT$max,"\n",sep=""))
 		}
     }
 
@@ -168,9 +221,15 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$post_tau2=0  
     LT$post_lambda=0
     
-    fname=paste(saveAt,'ETA_',j,'_lambda.dat',sep=''); if(rmExistingFiles){ unlink(fname) }
+    fname=paste(saveAt,"ETA_",j,"_lambda.dat",sep="");
+    
+    if(rmExistingFiles)
+    { 
+       unlink(fname) 
+    }
+    
     LT$NamefileOut=fname
-    LT$fileOut=file(description=fname,open='w')
+    LT$fileOut=file(description=fname,open="w")
 
     LT$X=as.vector(LT$X)
     return(LT)
@@ -184,14 +243,16 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     {
 	LT$K = as.matrix(LT$K)
         if(nrow(LT$K)!=ncol(LT$K)) stop(paste(" Kermel for linear term ",j, " is not a square matrix\n",sep=""))
+
 	#?# cambie     T = diag(weights)   LT$K = T %*% LT$K %*% T por lo que sigue abajo diag(weights)lo hace muy ineficiente
+
 	for(i in 1:nrow(LT$K))
         {
 		#j can not be used as subindex because its value is overwritten
 		for(m in i:ncol(LT$K))
                 {    
-				LT$K[i,m]<-LT$K[i,m]*weights[i]*weights[m] ;
-				LT$K[m,i]<-LT$K[m,i]
+				LT$K[i,m]=LT$K[i,m]*weights[i]*weights[m] ;
+				LT$K[m,i]=LT$K[m,i]
 		}
 	}
         tmp =eigen(LT$K)
@@ -201,7 +262,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     }else{
 	if(any(weights!=1))
         { 
-		cat(paste('Warning, in LT ',j,' Eigen decomposition was provided, and the model involves weights. Note: You should have weighted the kernel before computing eigen(K).\n',sep='')) 
+		cat(paste(" Warning, in LT ",j," Eigen decomposition was provided, and the model involves weights. Note: You should have weighted the kernel before computing eigen(K).\n",sep="")) 
         }
     }
     
@@ -209,7 +270,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     if (is.null(LT$tolD)) 
     {
        LT$tolD = 1e-10
-       cat(paste('  Default value of minimum eigenvalue in LP ',j,' was set to ',LT$tolD,'\n',sep=''))
+       cat(paste("  Default value of minimum eigenvalue in LP ",j," was set to ",LT$tolD,"\n",sep=""))
     }
     
     #Removing elements whose eigenvalues < tolD
@@ -222,13 +283,18 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     if (is.null(LT$df0)) 
     {
       LT$df0 = 5
-      cat(paste('  default value of df0 in LP ',j,' was missing and was set to ',LT$df0,'\n',sep=''))
+      cat(paste("  default value of df0 in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
     }
-	if(is.null(LT$R2)){ LT$R2<-R2/nLT}
+   
+    if(is.null(LT$R2))
+    { 
+           LT$R2=R2/nLT
+    }
+
     if (is.null(LT$S0)) 
     {
 	  LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(mean(LT$d)))*(LT$df0-2)
-          cat(paste('  default value of S0 in LP ',j,' was missing and was set to ',LT$S0,'\n',sep=''))
+          cat(paste("  default value of S0 in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
     }
     
     LT$u=rep(0,nrow(LT$K))
@@ -238,10 +304,15 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     LT$uStar=rep(0, LT$levelsU)
     
     #Output files
-    fname=paste(saveAt,'ETA_',j,'_varU.dat',sep='')
-    LT$NamefileOut=fname; if(rmExistingFiles){ unlink(fname) }
-    LT$fileOut=file(description=fname,open='w'
-    )
+    fname=paste(saveAt,"ETA_",j,"_varU.dat",sep="")
+    LT$NamefileOut=fname; 
+
+    if(rmExistingFiles)
+    { 
+       unlink(fname) 
+    }
+
+    LT$fileOut=file(description=fname,open="w")
     LT$post_varU=0
     LT$post_uStar = rep(0, LT$levelsU)
     LT$post_u = rep(0, nrow(LT$K))
@@ -250,13 +321,96 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     return(LT)
 }
 
+###Bayes B###########################################################################################################################################                    
+
+#Pseudo BayesB 
+#See Variable selection for regression models, 
+#Lynn Kuo and Bani Mallic, 1998. 
+setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
+{ 
+
+  #Be sure that your X is a matrix
+  LT$X=as.matrix(LT$X) 
+  
+  LT$p=ncol(LT$X)
+
+
+  #weights
+  for (i in 1:n) 
+  { 
+     LT$X[i, ] = weights[i]*LT$X[i, ]  
+  }
+	
+  LT$x2=rep(0,LT$p)
+  sumMeanXSq=0
+  for(i in 1:LT$p)
+  { 
+      LT$x2[i]=sum(LT$X[,i]^2)
+      sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
+  }
+  LT$MSx=sum(LT$x2)/n-sumMeanXSq
+
+  
+  if(any(is.na(LT$X))){ stop(paste("LP ",j," has NAs in X",sep=""))}
+  if(nrow(LT$X)!=n){stop(paste("   Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))}
+  
+  if(is.null(LT$R2))
+  {
+    LT$R2=R2/nLT
+    cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
+  }
+    
+  if(is.null(LT$df0))
+  {
+    LT$df0= 5
+    cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
+  }
+
+  if(is.null(LT$probIn))
+  {
+    LT$probIn=0.5
+    cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
+  } 
+
+  if(is.null(LT$S0))
+  {
+     LT$S0=var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
+     cat(paste(" Scale paramter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+  }
+ 
+  LT$b=rep(0, LT$p)
+  LT$d=rbinom(n = LT$p, size = 1, prob = LT$probIn)
+
+  LT$varB = LT$varB=rep(LT$S0/(LT$df0-2),LT$p)
+   
+  LT$X=as.vector(LT$X)
+
+  fname=paste(saveAt,"ETA_",j,"_varB.dat",sep="") 
+
+  if(rmExistingFiles)
+  { 
+      unlink(fname) 
+  }
+
+  LT$fileOut=file(description=fname,open="w")
+   
+  LT$post_varB=0
+  LT$post_varB2=0
+
+  LT$post_b=rep(0,LT$p)
+  LT$post_b2=rep(0,LT$p)
+  
+  #return object
+  return(LT) 
+}
+
+
 
 #Bayes C (Habier et al., 2011)
-
 setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 { 
 
-  #Be sure that you X is a matrix
+  #Be sure that your X is a matrix
   LT$X=as.matrix(LT$X) 
   
   LT$p=ncol(LT$X)
@@ -273,41 +427,39 @@ setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$MSx=sum(LT$x2)/n-sumMeanXSq
 
   
-  if(any(is.na(LT$X))){ stop(paste('LP ',j,' has NAs in X',sep=''))}
-  if(nrow(LT$X)!=n){stop(paste('   Number of rows of LP ',j,'  not equal to the number of phenotypes.',sep=''))}
+  if(any(is.na(LT$X))){ stop(paste("LP ",j," has NAs in X",sep=""))}
+  if(nrow(LT$X)!=n){stop(paste("   Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))}
   
   if(is.null(LT$R2))
   {
     LT$R2=R2/nLT
-    cat(paste('  R2 in LP ',j,' was missing and was set to ',LT$R2,'\n',sep=''))
+    cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
   }
     
   if(is.null(LT$df0))
   {
-    LT$df0<- 5
-    cat(paste('  DF in LP ',j,' was missing and was set to ',LT$df0,'\n',sep=''))
+    LT$df0 = 5
+    cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
   }
-
-  if(is.null(LT$R2)){ LT$R2<-R2/nLT}
 
   if(is.null(LT$probIn))
   {
     LT$probIn=0.5
-    cat(paste('  probIn in LP ',j,' was missing and was set to ',LT$probIn,'\n',sep=''))
+    cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
   }
   
   if(is.null(LT$counts))
   {
     LT$counts=10
-    cat(paste('  Counts in LP ',j,' was missing and was set to ',LT$counts,'\n',sep=''))
+    cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
   }  
   
   LT$countsIn=LT$counts * LT$probIn
   LT$countsOut=LT$counts - LT$countsIn
   
   if(is.null(LT$S0)){
-    LT$S0<-var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
-    cat(paste('  Scale parameter in LP ',j,' was missing and was set to ',LT$counts,'\n',sep=''))
+    LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
+    cat(paste("  Scale parameter in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
   }
     
   LT$b=rep(0, LT$p)
@@ -317,11 +469,14 @@ setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
    
   LT$X=as.vector(LT$X)
 
-  fname=paste(saveAt,'ETA_',j,'_parBayesC.dat',sep='') 
+  fname=paste(saveAt,"ETA_",j,"_parBayesC.dat",sep="") 
 
-  if(rmExistingFiles){ unlink(fname) }
+  if(rmExistingFiles)
+  { 
+    unlink(fname) 
+  }
 
-  LT$fileOut=file(description=fname,open='w')
+  LT$fileOut=file(description=fname,open="w")
    
   LT$post_varB=0
   LT$post_varB2=0
@@ -356,17 +511,17 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 
   if(is.null(LT$df0))
   {
-     LT$df0<-5  
-     cat(paste('  DF in LP ',j,' was missing and was set to ',LT$df0,'.\n',sep=''))
+     LT$df0 = 5  
+     cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,".\n",sep=""))
   }
   if(is.null(LT$R2)){
   	LT$R2=R2/nLT
-    cat(paste('  R2 in LP ',j,' was missing and was set to ',LT$R2,'\n',sep=''))
+    cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
   }
   if(is.null(LT$S0))
   {
-     LT$S0<-var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)
-     cat(paste(' Scale paramter in LP ',j,' was missing and was set to ',LT$S0,'\n',sep=''))
+     LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)
+     cat(paste(" Scale paramter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
   }
   # Improvement: Treat Scale as random, asign a gamma density 
   
@@ -499,15 +654,30 @@ extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
 #
 #Density function
 #f(x,nu,lambda)=sqrt[lambda/(2 pi x^3)]exp[-lambda(x-nu)^2/(2 x nu^2)]
-rinvGauss <-function (n, nu, lambda)
+rinvGauss=function (n, nu, lambda)
 {
-    n <- if (length(n) > 1)
+    n =if (length(n) > 1)
         length(n)
     else n
-    N <- max(length(nu), length(lambda))
-    nu <- rep(nu, length.out = N)
-    lambda <- rep(lambda, length.out = N)
+    N = max(length(nu), length(lambda))
+    nu = rep(nu, length.out = N)
+    lambda = rep(lambda, length.out = N)
     .C("rinvGaussR", as.double(nu), as.double(lambda), as.integer(n), as.integer(N), value = double(n))$value
+}
+
+#log-likelihood for ordinal data
+#y: response vector
+#predicted response vector, yHat=X%*%beta
+#threshold
+loglik_ordinal=function(y,yHat,threshold)
+{
+	sum=0
+        n=length(y)
+	for(i in 1:n)
+        {
+           sum=sum + log(pnorm(threshold[y[i] + 1]-yHat[i])-pnorm(threshold[y[i]]-yHat[i]))
+        }
+        return(sum)
 }
 
 ##################################################################################################
@@ -527,6 +697,24 @@ rinvGauss <-function (n, nu, lambda)
 #ncores: number of cores used in computations. If ncores=1 then it will 
 #        use OpenMP to perform the computations in UNIX like systems.
 #Note: The function was designed to work with gaussian responses, some changes were made to deal binary and ordinal responses
+
+
+#To add new method: 
+#(a) create setLT, 
+#(b) add it to the switch statement,
+#(c) add code to update parameters in the Gibbs sampler, 
+#(d) add code to save samples
+#(e) add code to compute posterior means
+#(f) Test:
+#(f1) Test simple example without hyper-paramaeters, evaluate how  
+#        default values were set
+	#(f2)  Check posterior means and files
+	#(f3)  Test simple example with some hyper-parameters give and 
+	#         some set by default
+#(f4) Run an example with a few missing values, compare to BLR 
+#       example, check: (i) residual variance, (ii) plot of effects, (iii) plot 
+#        of predictions in trn, (iv) plot of prediction in tst.
+
 
 BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL, 
     ETA = NULL, nIter = 1500, burnIn = 500, thin = 5, saveAt = "", 
@@ -668,11 +856,9 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
     if (nLT > 0) {
         for (i in 1:nLT) {
-            if (!(ETA[[i]]$model %in% c("FIXED", "BRR", "BL", 
-                "BayesA", "BayesC", "RKHS"))) {
-                stop(paste(" Error in ETA[[", i, "]]", " model ", 
-                  ETA[[i]]$model, " not implemented (note: evaluation is case sensitive).", 
-                  sep = ""))
+            if (!(ETA[[i]]$model %in% c("FIXED", "BRR", "BL", "BayesA", "BayesB","BayesC", "RKHS"))) 
+            {
+                stop(paste(" Error in ETA[[", i, "]]", " model ", ETA[[i]]$model, " not implemented (note: evaluation is case sensitive).", sep = ""))
             }
             ETA[[i]] = switch(ETA[[i]]$model, 
 			      FIXED = setLT.Fixed(LT = ETA[[i]],  n = n, j = i, weights = weights, y = y, nLT = nLT, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
@@ -680,8 +866,8 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                               BL = setLT.BL(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               RKHS = setLT.RKHS(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BayesC = setLT.BayesC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
-                              BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
-                              #BayesB=setLT.BayesB(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,saveAt=saveAt),
+                              BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
+                              BayesB = setLT.BayesB(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
                               #BEN=setLT.BEN(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2,saveAt=saveAt)
                               )
         }
@@ -808,8 +994,6 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   if (pIn > 0) {
                     x = .Call("extract_column", which(mrkIn), n, ETA[[j]]$X)
 
-                    #?# ETA[[j]]$SSx[mrkIn]
-
                     ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn], 
                                                e, rep(ETA[[j]]$varB, pIn), varE, minAbsBeta, ncores)
                     ETA[[j]]$b[mrkIn] = ans[[1]]
@@ -844,10 +1028,43 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   e = ans[[2]]
                    
                   #Update variances
-                  SS <- ETA[[j]]$S0 + ETA[[j]]$b^2
-                  DF <- ETA[[j]]$df0 + 1
+                  SS = ETA[[j]]$S0 + ETA[[j]]$b^2
+                  DF = ETA[[j]]$df0 + 1
                   ETA[[j]]$varB = SS/rchisq(n = ETA[[j]]$p, df = DF)
                 }#End BayesA
+                
+                #BayesB
+                if(ETA[[j]]$model=="BayesB")
+                {
+                      #Update marker effects
+                      mrkIn=ETA[[j]]$d==1
+                      pIn=sum(mrkIn)
+                      if(pIn>0)
+                      {
+                        x=.Call("extract_column",which(mrkIn),n, ETA[[j]]$X)
+
+                        ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn],
+                                       e, ETA[[j]]$varB, varE, minAbsBeta,ncores)
+                        ETA[[j]]$b[mrkIn] = ans[[1]]
+                        e = ans[[2]]
+                      }
+
+                      if((ETA[[j]]$p-pIn)>0)
+                      {
+                          ETA[[j]]$b[(!mrkIn)]=rnorm(n=(ETA[[j]]$p-pIn),sd=sqrt(ETA[[j]]$varB))
+                      }
+
+                      #Update indicator variables
+                      ans=.Call("d_e",ETA[[j]]$p,n,ETA[[j]]$X,ETA[[j]]$d,ETA[[j]]$b,e,varE,ETA[[j]]$probIn,ncores)
+                      ETA[[j]]$d=ans[[1]]
+                      e=ans[[2]]
+
+                      #Update the variance component associated with the markers
+                      SS = ETA[[j]]$b^2 + ETA[[j]]$S0
+                      DF = ETA[[j]]$df0+1
+                      ETA[[j]]$varB = SS/rchisq(df=DF, n = ETA[[j]]$p)
+                }#End Bayes B
+
             }#Loop for
         }#nLT
         
@@ -927,12 +1144,17 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   }
 
                   if (ETA[[j]]$model == "BayesC") {
-                    tmp <- c(ETA[[j]]$probIn, ETA[[j]]$varB)
+                    tmp = c(ETA[[j]]$probIn, ETA[[j]]$varB)
                     write(tmp, ncolumns = 2, file = ETA[[j]]$fileOut, append = TRUE)
                   }
 
                   if (ETA[[j]]$model == "BayesA") {
                     # Nothing here for now
+                  }
+                  
+                  if(ETA[[j]]$model=="BayesB")
+                  {
+                        write(round(ETA[[j]]$varB,6),file=ETA[[j]]$fileOut,append=TRUE,ncolumns=length(ETA[[j]]$varB),sep=" ")
                   }
                 }
             }
@@ -987,6 +1209,13 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                       ETA[[j]]$post_varB2 = ETA[[j]]$post_varB2 * k + (ETA[[j]]$varB^2)/nSums
                     }
 
+                    if(ETA[[j]]$model=="BayesB")
+                    {
+                        ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
+                        ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
+                        ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
+                        ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB2^2)/nSums
+                    }
                   }
                 }
 
@@ -1002,6 +1231,10 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (response_type == "ordinal") {
                   post_threshold = post_threshold * k + threshold/nSums
                   post_threshold2 = post_threshold2 * k + (threshold^2)/nSums
+                 
+                  #Check this
+                  logLik=loglik_ordinal(z,yHat,threshold)
+		  
                 }
 
                 if(response_type == "gaussian") {
@@ -1021,14 +1254,14 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 {
 		    #Be careful, the vector with the original response here is z
 		    if (nNa > 0) {
-                        pSuccess <- pnorm(mean = 0, sd = 1, q = yHat[-whichNa])
-                        tmp <- z[-whichNa]
-                        logLik <- sum(log(ifelse(z[-whichNa] == 0, (1 - pSuccess), pSuccess)))
+                        pSuccess = pnorm(mean = 0, sd = 1, q = yHat[-whichNa])
+                        tmp = z[-whichNa]
+                        logLik = sum(log(ifelse(z[-whichNa] == 0, (1 - pSuccess), pSuccess)))
                   }
                   else {
-                        pSuccess <- pnorm(mean = 0, sd = 1, q = yHat)
-                        tmp <- z[-whichNa]
-                        logLik <- sum(log(ifelse(z == 0, (1 - pSuccess), pSuccess)))
+                        pSuccess = pnorm(mean = 0, sd = 1, q = yHat)
+                        tmp = z[-whichNa]
+                        logLik = sum(log(ifelse(z == 0, (1 - pSuccess), pSuccess)))
                   }
                 }
 
@@ -1067,17 +1300,14 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                weights = weights, ncores = ncores, verbose = verbose, 
                response_type = response_type, df0 = df0, S0 = S0)
 
-    out$yHat <- post_yHat
-    out$SD.yHat <- sqrt(post_yHat2 - (post_yHat^2))
-    out$mu <- post_mu
-    out$SD.mu <- sqrt(post_mu2 - post_mu^2)
-    out$varE <- post_varE
-    out$SD.varE <- sqrt(post_varE2 - post_varE^2)
+    out$yHat = post_yHat
+    out$SD.yHat = sqrt(post_yHat2 - (post_yHat^2))
+    out$mu = post_mu
+    out$SD.mu = sqrt(post_mu2 - post_mu^2)
+    out$varE = post_varE
+    out$SD.varE = sqrt(post_varE2 - post_varE^2)
     
-    #goodness of fit
-    #Now only for uncensored gaussian samples
-    #FIXME: Censored missing in gaussian responses
-    #       Ordinal missing
+    #goodness of fit 
     out$fit = list()
     
     if(response_type=="gaussian")
@@ -1092,9 +1322,9 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     	out$fit$logLikAtPostMean = sum(dnorm(tmpE, sd = tmpSD, log = TRUE))
 
 	if (Censored) {
-            cdfA <- pnorm(q = a[whichNa], sd = sqrt(post_varE), mean = post_yHat[whichNa])
-            cdfB <- pnorm(q = b[whichNa], sd = sqrt(post_varE), mean = post_yHat[whichNa])
-            out$fit$logLikAtPostMean <- out$fit$logLikAtPostMean + sum(log(cdfB - cdfA))
+            cdfA = pnorm(q = a[whichNa], sd = sqrt(post_varE), mean = post_yHat[whichNa])
+            cdfB = pnorm(q = b[whichNa], sd = sqrt(post_varE), mean = post_yHat[whichNa])
+            out$fit$logLikAtPostMean = out$fit$logLikAtPostMean + sum(log(cdfB - cdfA))
         }
     }
    
@@ -1103,40 +1333,42 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 	#Be careful, now the vector with response is y
 	if(nNa>0)
         {
-	   pSuccess <- pnorm(mean = 0, sd = 1, q = post_yHat[-whichNa])
-           out$fit$logLikAtPostMean <- sum(log(ifelse(y[-whichNa] == 0, (1 - pSuccess), pSuccess)))
+	   pSuccess = pnorm(mean = 0, sd = 1, q = post_yHat[-whichNa])
+           out$fit$logLikAtPostMean = sum(log(ifelse(y[-whichNa] == 0, (1 - pSuccess), pSuccess)))
         }else
         {
-           pSuccess <- pnorm(mean = 0, sd = 1, q = post_yHat)
-           out$fit$logLikAtPostMean <- sum(log(ifelse(y == 0, (1 - pSuccess), pSuccess)))
+           pSuccess = pnorm(mean = 0, sd = 1, q = post_yHat)
+           out$fit$logLikAtPostMean = sum(log(ifelse(y == 0, (1 - pSuccess), pSuccess)))
         }
+    }
+
+    if(response_type=="ordinal")
+    {
+         out$fit$logLikAtPostMean = loglik_ordinal(y,post_yHat,post_threshold)
+         out$threshold = post_threshold[-c(1, nclass + 1)]
+         out$SD.threshold = sqrt(post_threshold2 - post_threshold^2)[-c(1, nclass + 1)] 
     }
 
     out$fit$postMeanLogLik = post_logLik
     out$fit$pD = -2 * (post_logLik - out$fit$logLikAtPostMean)
     out$fit$DIC = out$fit$pD - 2 * post_logLik
 
-    if (response_type == "ordinal") {
-        out$threshold = post_threshold[-c(1, nclass + 1)]
-        out$SD.threshold = sqrt(post_threshold2 - post_threshold^2)[-c(1, nclass + 1)]
-    }
-
     # Renaming and removing objects in ETA
     if (nLT > 0) {
         for (i in 1:nLT) {
 
             if (ETA[[i]]$model != "RKHS") {
-                ETA[[i]]$b <- ETA[[i]]$post_b
-                ETA[[i]]$SD.b <- sqrt(ETA[[i]]$post_b2 - ETA[[i]]$post_b^2)
-                tmp <- which(names(ETA[[i]]) %in% c("post_b", "post_b2"))
-                ETA[[i]] <- ETA[[i]][-tmp]
+                ETA[[i]]$b = ETA[[i]]$post_b
+                ETA[[i]]$SD.b = sqrt(ETA[[i]]$post_b2 - ETA[[i]]$post_b^2)
+                tmp = which(names(ETA[[i]]) %in% c("post_b", "post_b2"))
+                ETA[[i]] = ETA[[i]][-tmp]
             }
 
             if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC")) {
-                ETA[[i]]$varB <- ETA[[i]]$post_varB
-                ETA[[i]]$SD.varB <- ETA[[i]]$post_varB2 - (ETA[[i]]$post_varB^2)
-                tmp <- which(names(ETA[[i]]) %in% c("post_varB", "post_varB2"))
-                ETA[[i]] <- ETA[[i]][-tmp]
+                ETA[[i]]$varB = ETA[[i]]$post_varB
+                ETA[[i]]$SD.varB = ETA[[i]]$post_varB2 - (ETA[[i]]$post_varB^2)
+                tmp = which(names(ETA[[i]]) %in% c("post_varB", "post_varB2"))
+                ETA[[i]] = ETA[[i]][-tmp]
             }
         }
         out$ETA = ETA
@@ -1202,8 +1434,8 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
     }
 
     #FIXME: In original BLR IDS are used to buid A matrix Z,
-    #and then run the model y=Zu+e, u~MN(0,varU*A), and then using the Cholesky factorizatio
-    #it was possible to fit the model. The algorithm used here is different (Orthogonal variables
+    #and then run the model y=Zu+e, u~MN(0,varU*A), and then using the Cholesky factorization
+    #it was possible to fit the model. The algorithm used here is different (Orthogonal variables)
     #and it may be that the IDS are not longer necessary
 
     if (!is.null(GF[[1]])) {
@@ -1249,9 +1481,8 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
 
 
 if(FALSE){
+
 ###BAYESIAN ELASTIC NET ###########################################################################################################################################   
-
-
 #Bayesian Elastic Net LASSO
 #Kyung et al., 2010
 setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
@@ -1259,8 +1490,8 @@ setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 
-    if(any(is.na(LT$X))){stop(paste('LP ',j,' has NAs in X',sep=''))}
-    if(nrow(LT$X)!=n){stop(paste('   Number of rows of LP ',j,'  not equal to the number of phenotypes.',sep=''))}
+    if(any(is.na(LT$X))){stop(paste("LP ",j," has NAs in X",sep=""))}
+    if(nrow(LT$X)!=n){stop(paste("   Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))}
 
     for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
 
@@ -1276,44 +1507,44 @@ setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
     # Prior
     if(is.null(LT$type))
     {
-                LT$type='gamma'
-                cat(paste('  By default, lambda1^2 and lambda2 in LP ',j,'  were set to gamma.\n',sep=''))
+                LT$type="gamma"
+                cat(paste("  By default, lambda1^2 and lambda2 in LP ",j,"  were set to gamma.\n",sep=""))
     }
    
-    if(LT$type!='gamma') stop("Only gamma type priors are allowed for lambda1^2 and lambda2");
+    if(LT$type!="gamma") stop("Only gamma type priors are allowed for lambda1^2 and lambda2");
 
     #Lambda1
     if(is.null(LT$lambda1))
     {
         LT$lambda1=0.5
-        cat(paste('  Initial value of lambda1 in LP ',j,' was missing and was set to ',LT$lambda1,'\n',sep=''))
+        cat(paste("  Initial value of lambda1 in LP ",j," was missing and was set to ",LT$lambda1,"\n",sep=""))
     }
     if(is.null(LT$shape1))
     {
         LT$shape1=10
-        cat(paste('  shape1 parameter for lambda1^2 in LP ',j,' was missing and was set to ',LT$shape1,'\n',sep=''))
+        cat(paste("  shape1 parameter for lambda1^2 in LP ",j," was missing and was set to ",LT$shape1,"\n",sep=""))
     }
     if(is.null(LT$rate1))
     {
          LT$rate1=1
-         cat(paste('  rate1 parameter for lambda1^2 in LP ',j,' was missing and was set to ',LT$rate1,'\n',sep=''))
+         cat(paste("  rate1 parameter for lambda1^2 in LP ",j," was missing and was set to ",LT$rate1,"\n",sep=""))
     } 
 
     #Lambda2
     if(is.null(LT$lambda2))
     {
         LT$lambda2=0.5
-        cat(paste('  Initial value of lambda2 in LP ',j,' was missing and was set to ',LT$lambda2,'\n',sep=''))
+        cat(paste("  Initial value of lambda2 in LP ",j," was missing and was set to ",LT$lambda2,"\n",sep=""))
     }
     if(is.null(LT$shape2))
     {
         LT$shape2=10
-        cat(paste('  shape2 parameter for lambda2 in LP ',j,' was missing and was set to ',LT$shape2,'\n',sep=''))
+        cat(paste("  shape2 parameter for lambda2 in LP ",j," was missing and was set to ",LT$shape2,"\n",sep=""))
     }
     if(is.null(LT$rate2))
     {
          LT$rate2=1
-         cat(paste('  rate2 parameter for lambda2 in LP ',j,' was missing and was set to ',LT$rate2,'\n',sep=''))
+         cat(paste("  rate2 parameter for lambda2 in LP ",j," was missing and was set to ",LT$rate2,"\n",sep=""))
     }
 
     LT$b=rep(0,LT$p)
@@ -1327,9 +1558,9 @@ setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
     LT$post_lambda2=0
 
     #Output_file
-    fname=paste(saveAt,'ETA_',j,'_lambda1_lambda2.dat',sep='')
+    fname=paste(saveAt,"ETA_",j,"_lambda1_lambda2.dat",sep="")
     LT$NamefileOut=fname
-    LT$fileOut=file(description=fname,open='w')
+    LT$fileOut=file(description=fname,open="w")
    
     LT$X=as.vector(LT$X)
     return(LT)
@@ -1337,7 +1568,7 @@ setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
 }
 
 ##########################################
-                    if(ETA[[j]]$model=='BEN')
+                    if(ETA[[j]]$model=="BEN")
                     {
                         #Update Betas
  			varBj = varE * (ETA[[j]]$tau2)/(1+ETA[[j]]$lambda2*ETA[[j]]$tau2)
@@ -1370,147 +1601,7 @@ setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
                         deltadf=deltadf+ETA[[j]]$p
 
                     } #END BEN
-                    
-###Bayes B###########################################################################################################################################                    
-            
-            
-#Pseudo BayesB 
-#See Variable selection for regression models, 
-#Lynn Kuo and Bani Mallic, 1998. 
-#FIXME: weights are not being used
-#FIXME: markers are centered
-setLT.BayesB=function(LT,n,j,weights,y,saveAt)
-{ 
 
-  #Be sure that you X is a matrix
-  LT$X=as.matrix(LT$X) 
-  
-  LT$p=ncol(LT$X)
-  
-  if(any(is.na(LT$X))){ stop(paste('LP ',j,' has NAs in X',sep=''))}
-  if(nrow(LT$X)!=n){stop(paste('   Number of rows of LP ',j,'  not equal to the number of phenotypes.',sep=''))}
-  
-  if(is.null(LT$h2))
-  {
-    LT$h2=0.5
-    cat(paste('  default value of h2 in LP ',j,' was missing and was set to ',LT$h2,'\n',sep=''))
-  }
-    
-  if(is.null(LT$dfVarB))
-  {
-    LT$dfVarB = 5
-    cat(paste('  default value of dfVarB in LP ',j,' was missing and was set to ',LT$dfVarB,'\n',sep=''))
-  }
-  
-  if(is.null(LT$probIn))
-  {
-    LT$probIn=0.5
-    cat(paste('  default value of probIn in LP ',j,' was missing and was set to ',LT$probIn,'\n',sep=''))
-  }
-  
-  SSx = rep(NA, LT$p)
-  for (i in 1:LT$p) 
-  {
-    X[, i] = (X[, i] - mean(X[, i]))
-    SSx[i] = sum(X[, i]^2)
-  }
-  
-  LT$SSx=SSx
-  
-  LT$b=rep(0, LT$p)
-  LT$d=rbinom(n = LT$p, size = 1, prob = LT$probIn)
-  
-  
-  #FIXME
-  tmp<-var(y, na.rm = TRUE) * LT$h2/sum(LT$SSx/n)/LT$probIn
-  LT$varB = rep(tmp,LT$p)
-  LT$scaleVarB = tmp * (LT$dfVarB - 2)/LT$dfVarB
-  
-  LT$X=as.vector(LT$X)
-
-  fname=paste(saveAt,'ETA_',j,'_varB.dat',sep='')
-  LT$NamefileOut=fname  
-  LT$fileOut=file(description=fname,open='w')
-  
-  
-  LT$post_varB=LT$varB
-  LT$post_varB2=LT$varB^2
-  
-  LT$post_b=rep(0,LT$p)
-  LT$post_b2=rep(0,LT$p)
-  
-  #return object
-  return(LT)
-}
-##############################################
-                    
-                    #FIXME: Experimental version with indicator variables 
-		    if(ETA[[j]]$model=='BayesB')
-		    {
-		      #Update marker effects
-		      mrkIn=ETA[[j]]$d==1
-		      pIn=sum(mrkIn)
-		      if(pIn>0)
-		      {        
-		        x=.Call("extract_column",which(mrkIn),n, ETA[[j]]$X)
-			  
-		        ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$SSx[mrkIn], ETA[[j]]$b[mrkIn], 
-		      	               e, ETA[[j]]$varB, varE, minAbsBeta,ncores)
-		      	ETA[[j]]$b[mrkIn] = ans[[1]]
-		      	e = ans[[2]]
-		      }
-		      
-		      if((ETA[[j]]$p-pIn)>0)
-		      {
-		      	  ETA[[j]]$b[(!mrkIn)]=rnorm(n=(ETA[[j]]$p-pIn),sd=sqrt(ETA[[j]]$varB))
-		      }
-		      
-		      #Update indicator variables
-		      ans=.Call("d_e",ETA[[j]]$p,n,ETA[[j]]$X,ETA[[j]]$d,ETA[[j]]$b,e,varE,ETA[[j]]$probIn,ncores)
-		      ETA[[j]]$d=ans[[1]]
-		      e=ans[[2]]
-		      
-		      #Update the variance component associated with the markers
-		      #FIXME: Check this formula
-		      #tmpS = sum(ETA[[j]]$b^2) + ETA[[j]]$scaleVarB * ETA[[j]]$dfVarB
-		      tmpS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0 
-		      #ETA[[j]]$varB = tmpS/rchisq(df=ETA[[j]]$dfVarB+1, n = ETA[[j]]$p)
-		      
-		      
-		    }#End BayesB
-		    
-		    if(ETA[[j]]$model=='BayesB')
-					{
-						write(round(ETA[[j]]$varB,6),file=ETA[[j]]$fileOut,append=TRUE,ncolumns=length(ETA[[j]]$varB),sep=" ")
-					}
-						if(ETA[[j]]$model=='BayesB')
-						{
-							ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
-							ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
-							ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
-							ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB2^2)/nSums
-						}
 ##############################################################################################################################################	
 
 }
-
-
-if(FALSE){
-
-#To add new method: 
-#(a) create setLT, 
-#(b) add it to the switch statement,
-#(c) add code to update parameters in the Gibbs sampler, 
-#(d) add code to save samples
-#(e) add code to compute posterior means
-#(f) Test:
-#(f1) Test simple example without hyper-paramaeters, evaluate how  
-#        default values were set
-	#(f2)  Check posterior means and files
-	#(f3)  Test simple example with some hyper-parameters give and 
-	#         some set by default
-#(f4) Run an example with a few missing values, compare to BLR 
-#       example, check: (i) residual variance, (ii) plot of effects, (iii) plot 
-#        of predictions in trn, (iv) plot of prediction in tst.
-}
-

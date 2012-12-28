@@ -31,9 +31,6 @@ The vector contains integer codes:
 
 }
 
-\references{
-}
-
 \author{
 Gustavo de los Campos, Paulino Perez Rodriguez,
 }

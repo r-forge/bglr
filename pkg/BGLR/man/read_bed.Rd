@@ -19,9 +19,6 @@
    \item{verbose}{logical, if true print hex dump of bed file.}
 }
 
-\details{
-
-}
 
 \value{
 
@@ -38,9 +35,6 @@ The vector contains integer codes:
    3 \tab 11 Homozygote "2"/"2" \cr
  }
 
-}
-
-\references{
 }
 
 \author{

@@ -1,5 +1,61 @@
 #1.- Uniformize notation in BLR and BGLR in particular df0 should be changed to df, S0 
      should be changed to S
-#2.- Activate BayesB
-#3.- Activate/Delete BEN
+#2.- Activate/Delete BEN
 
+#check unused variables, 
+
+source('R/BGLR.R')
+
+require(codetools)
+for(iVar in ls()){
+  if(is.function(get(iVar))){
+    print(iVar)
+    checkUsage(get(iVar), all = TRUE, suppressUndefined = FALSE)
+  }
+}
+
+#output
+
+[1] "BGLR"
+<anonymous>: parameter ‘a’ changed by assignment (R/BGLR.R:732)
+<anonymous>: parameter ‘b’ changed by assignment (R/BGLR.R:733)
+<anonymous>: parameter ‘ETA’ changed by assignment (R/BGLR.R:855)
+<anonymous>: parameter ‘S0’ changed by assignment (R/BGLR.R:840-842)
+<anonymous>: parameter ‘saveAt’ changed by assignment (R/BGLR.R:728-730)
+<anonymous>: parameter ‘weights’ changed by assignment (R/BGLR.R:737-740)
+<anonymous>: parameter ‘y’ changed by assignment (R/BGLR.R:734)
+[1] "BLR"
+<anonymous>: parameter ‘prior’ changed by assignment (R/BGLR.R:1396-1403)
+<anonymous>: parameter ‘thin2’ may not be used
+[1] "dLambda"
+[1] "dScaledInvChisq"
+[1] "extract"
+[1] "loglik_ordinal"
+[1] "metropLambda"
+<anonymous>: parameter ‘lambda’ changed by assignment (R/BGLR.R:589)
+<anonymous>: parameter ‘ncp’ may not be used
+[1] "rinvGauss"
+<anonymous>: parameter ‘lambda’ changed by assignment (R/BGLR.R:662)
+<anonymous>: parameter ‘n’ changed by assignment (R/BGLR.R:659-661)
+<anonymous>: parameter ‘nu’ changed by assignment (R/BGLR.R:662)
+[1] "rtrun"
+[1] "setLT.BayesA"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:498)
+<anonymous>: parameter ‘rmExistingFiles’ may not be used
+<anonymous>: parameter ‘saveAt’ may not be used
+[1] "setLT.BayesB"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:333)
+[1] "setLT.BayesC"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:414)
+[1] "setLT.BL"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:121)
+[1] "setLT.BRR"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:52)
+[1] "setLT.Fixed"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:5)
+<anonymous>: parameter ‘nLT’ may not be used
+<anonymous>: parameter ‘y’ may not be used
+[1] "setLT.RKHS"
+<anonymous>: parameter ‘LT’ changed by assignment (R/BGLR.R:242-267)
+<anonymous>: parameter ‘n’ may not be used
+[1] "welcome"

@@ -27,7 +27,7 @@ y<-signal +error
 
 nIter=500;
 burnIn=400;
-thin=3;
+thin=10;
 saveAt='';
 S0=NULL;
 weights=NULL;
