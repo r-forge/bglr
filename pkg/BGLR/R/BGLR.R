@@ -316,6 +316,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     LT$post_varU=0
     LT$post_uStar = rep(0, LT$levelsU)
     LT$post_u = rep(0, nrow(LT$K))
+    LT$post_u2 = rep(0,nrow(LT$K))
     
     #return object
     return(LT)
@@ -932,11 +933,11 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                       ETA[[j]]$tau2 = 1/tmp
                     }
                     else {
-                      cat("WARNING: tau2 was not updated due to numeric problems with beta\n")
+                      warning(paste("tau2 was not updated in iteration",i, "due to numeric problems with beta\n",sep=" "),immediate. = TRUE)
                     }
                   }
                   else {
-                    cat("WARNING: tau2 was not updated due to numeric problems with beta\n")
+                    warning(paste("tau2 was not updated  in iteration",i,"due to numeric problems with beta\n",sep=" "),immediate. = TRUE)
                   }
 
                   #Update lambda 
@@ -948,7 +949,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                       ETA[[j]]$lambda = sqrt(ETA[[j]]$lambda2)
                     }
                     else {
-                      cat("WARNING: lambda was not updated due to numeric problems with beta\n")
+                      warning(paste("lambda was not updated in iteration",i, "due to numeric problems with beta\n",sep=" "),immediate. = TRUE)
                     }
                   }
 
@@ -1191,6 +1192,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                       ETA[[j]]$post_varU = ETA[[j]]$post_varU * k + ETA[[j]]$varU/nSums
                       ETA[[j]]$post_uStar = ETA[[j]]$post_uStar * k + ETA[[j]]$uStar/nSums
                       ETA[[j]]$post_u = ETA[[j]]$post_u * k + ETA[[j]]$u/nSums
+                      ETA[[j]]$post_u2 = ETA[[j]]$post_u2 * k + (ETA[[j]]$u^2)/nSums
                     }
 
                     if (ETA[[j]]$model == "BayesC") {
@@ -1353,7 +1355,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     out$fit$pD = -2 * (post_logLik - out$fit$logLikAtPostMean)
     out$fit$DIC = out$fit$pD - 2 * post_logLik
 
-    # Renaming and removing objects in ETA
+    # Renaming/removing objects in ETA
     if (nLT > 0) {
         for (i in 1:nLT) {
 
@@ -1362,6 +1364,11 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 ETA[[i]]$SD.b = sqrt(ETA[[i]]$post_b2 - ETA[[i]]$post_b^2)
                 tmp = which(names(ETA[[i]]) %in% c("post_b", "post_b2"))
                 ETA[[i]] = ETA[[i]][-tmp]
+            }
+            
+            if(ETA[[i]]$model=="RKHS")
+            {
+               ETA[[i]]$SD.u=sqrt(ETA[[i]]$post_u2 - ETA[[i]]$post_u^2)
             }
 
             if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC")) {
@@ -1380,7 +1387,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
 #This function will be a wrapper for BGLR
 #the idea is to maintain the compatibility with the function BLR in 
-#the package BLR that was released in 2010
+#the package BLR that was released in 2010, updated in 2011 and 2012
 
 #FIXME: thin2 parameter is missing in BGLR
 
@@ -1389,9 +1396,16 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
     thin2 = 1e+10, saveAt = "", minAbsBeta = 1e-09, weights = NULL, 
     ncores = 1) 
 {
+
     ETA = NULL
     ETA = list()
     nLT = 0
+
+    cat("This implementation is a simplified interface for the more general\n")
+    cat("function BGLR, we keep it for backward compatibility with our package BLR\n")
+
+    warning("thin2 parameter is not used any more and will be deleted in next releases\n",immediate. = TRUE);
+   
     cat("Setting parameters for BGLR...\n")
     if (is.null(prior)) {
         cat("===============================================================\n")
@@ -1442,6 +1456,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
         nLT = nLT + 1
         ETA[[nLT]] = list(K = GF$A, model = "RKHS", df0 = prior$varU$df, 
             S0 = prior$varU$S)
+        warning("IDs are not used any more and will be deleted in next releases...\n",immediate. = TRUE) 
     }
 
     cat("Finish setting parameters for BGLR\n")
@@ -1469,7 +1484,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
             }
             if (ETA[[j]]$model == "RKHS") {
                 out$u = out$ETA[[j]]$post_u
-                out$SD.u = NULL  #FIXME
+                out$SD.u =out$ETA[[j]]$SD.u
                 out$varU = out$ETA[[j]]$post_varU
             }
         }

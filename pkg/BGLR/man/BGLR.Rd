@@ -24,13 +24,13 @@
    \item{weights}{(numeric, \eqn{n}{n}) a vector of weights, may be NULL.}
    \item{nIter,burnIn, thin}{(integer) the number of iterations, burn-in and thinning.}
    \item{saveAt}{(string) this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.}
-   \item{ncores}{Number of cpu's used in computations,default 1.}
+   \item{ncores}{Number of CPUs used in computations, default value 1.}
    \item{S0}{The scale parameter for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{df0}{The degrees of freedom for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{R2}{...}
    \item{minAbsBeta}{The minimum absolute value of the components of \eqn{\boldsymbol \beta_L}{bL} to avoid numeric problems when sampling from \eqn{\boldsymbol \tau^2}{\tau^2}, default \eqn{1 \times 10^{-9}}{1e-9}.}
-   \item{verbose}{logical, if TRUE prints iteration history.}
-   \item{rmExistingFiles}{logical, if TRUE removes existing output files from previous runs.}
+   \item{verbose}{logical, if TRUE prints iteration history, defalt TRUE.}
+   \item{rmExistingFiles}{logical, if TRUE removes existing output files from previous runs, default value is TRUE.}
 }
 
 \details{
@@ -51,9 +51,9 @@ The program run a Gibbs sampler for the regression model given below.
 
 
 where \eqn{\mu}{mu} is an effect common to all individuals, \eqn{\boldsymbol X_F=\{ x_{Fij} \}}{XF} 
-represent covariates whose effects \eqn{\boldsymbol \beta_{F}=\{\beta_{Fij}\}}{bF} will be estimated 
+represent covariates whose effects \eqn{\boldsymbol \beta_{F}=\{\beta_{Fj}\}}{bF} will be estimated 
 shrinkage (the so-called `fixed effecs', e.g., age, sex), \eqn{\boldsymbol X_{Rh}=\{x_{Rhij}\}}{XR[h]} 
-represent covariates whose effects \eqn{\boldsymbol \beta_{Rh}=\{\boldsymbol \beta_{Rhij}\}}{bR[h]} will be treated as `random effects'
+represent covariates whose effects \eqn{\boldsymbol \beta_{Rh}=\{\boldsymbol \beta_{Rhj}\}}{bR[h]} will be treated as `random effects'
 and will be estimated using shrinkage estimation methods (non-flat priors in a Bayesian context) and 
 \eqn{\boldsymbol u_h=\{u_{hi}\}}{u[h]} are random effects used to describe, for example, a regression on a 
 pedigree or a RKHS regression on markers.
@@ -62,16 +62,16 @@ pedigree or a RKHS regression on markers.
 
 The model specification is complete once we assign a prior distribution to the model unknowns. 
 The intercept \eqn{\mu}{mu} and \eqn{\boldsymbol \beta_F}{bF} are assigned flat priors, while
-\eqn{\boldsymbol \beta_{Rh}}{bR[h]}, \eqn{\boldsymbol u_h}{u[h]} and \eqn{\sigma^2} are assigned non 
-flat priors, denoted as \eqn{p(\boldsymbol \beta_R)}{p(bR)}, \eqn{p(\boldsymbol u)}{p(u)} and \eqn{p(\sigma^2)}{p(sigma^2)}, 
+\eqn{\boldsymbol \beta_{Rh}}{bR[h]}, \eqn{\boldsymbol u_h}{u[h]} and \eqn{\sigma_e^2}{sigma[e]^2} are assigned non 
+flat priors, denoted as \eqn{p(\boldsymbol \beta_R)}{p(bR)}, \eqn{p(\boldsymbol u)}{p(u)} and \eqn{p(\sigma_e^2)}{p(sigma[e]^2)}, 
 respectively. The structure of the priors is as follows:
 
 \deqn{
   \begin{array}{lr}
-   p(\mu,\boldsymbol \beta_F, \boldsymbol \beta_{R1},...,\boldsymbol \beta_{RH\beta},\boldsymbol u_1,...,\boldsymbol u_{Hu},\sigma^2) \propto % 
-   \left\{\prod_{h=1}^{H\beta} p (\boldsymbol \beta_{Rh})\right\} \left\{\prod_{h=1}^{Hu} p(\boldsymbol u_h) \right\} \chi^{-2}(\sigma^2| df,S), & (2)
+   p(\mu,\boldsymbol \beta_F, \boldsymbol \beta_{R1},...,\boldsymbol \beta_{RH\beta},\boldsymbol u_1,...,\boldsymbol u_{Hu},\sigma_e^2) \propto % 
+   \left\{\prod_{h=1}^{H\beta} p (\boldsymbol \beta_{Rh})\right\} \left\{\prod_{h=1}^{Hu} p(\boldsymbol u_h) \right\} \chi^{-2}(\sigma_e^2| df,S), & (2)
 \end{array}
-}{p(mu,bF,bR[1],...,bR[Hb],u[1],...,u[Hu]) propto prod(p(bR[h]),h) prod(u[h],h) Inv_Scaled_chisq(sigma^2 | df,S) ...(2)}
+}{p(mu,bF,bR[1],...,bR[Hb],u[1],...,u[Hu],sigma[e]^2) propto prod(p(bR[h]),h) prod(u[h],h) Inv_Scaled_chisq(sigma[e]^2 | df,S) ...(2)}
 
 where \eqn{\chi^{-2} (\sigma^2 | df,S)}{Inv_Scaled_chisq(sigma^2 | df,S)} is a scaled-inverse Chi-square 
 density assigned to \eqn{\sigma^2}{sigma^2} with degree of freedom and 
@@ -128,13 +128,13 @@ alternative shrinkage procedures such as those described below can be used.
 
 This class of mixtures can be used as prior of marker effects to obtain a type of shrinkage different than that
 of a BGR. Examples of this are the double-exponential (DE) and scaled-t densities, which are commonly used as prior of
-maker effects in Whole Genomic Prediction (WPG). The results models are known as the Bayesian LASSO (BL) and Bayes A respectively.
+maker effects in Whole Genomic Prediction (WPG). The results models are known as the Bayesian LASSO (BL) and BayesA respectively.
 Relative to the Gaussian density used in BGR, the DE and the scaled-t densities have higer mass at zero and thicker tails, inducing a 
 different type of shrinkage. The DE and scaled-t prior densities can be represented as mixtures of scaled normal-densities
 of the form
 
 \deqn{
-       p(\beta_{Rhj} | H) = \int N(\beta_{Rhj} | 0, \sigma_{\beta hj}^2) p(\sigma_{\beta hj}^2 | H)  \partial \sigma_{\beta_hj}^2
+       p(\beta_{Rhj} | H) = \int N(\beta_{Rhj} | 0, \sigma_{\beta hj}^2) p(\sigma_{\beta hj}^2 | H)  \partial \sigma_{\beta hj}^2
     }{p(beta[Rhj]| H)= Integrate(N(beta[Rhj]|0,sigma[beta hj]^2)) * p(sigma[beta hj]^2 | H) d sigma[beta hj]^2}
 
 where \eqn{\sigma_{\beta hj}^2}{sigma[beta hj]^2} is a marker-specific variance parameter, 
@@ -173,9 +173,9 @@ available is \eqn{a_i< y_i < b_i}  where: \eqn{a_i}  and \eqn{b_i}  are known lo
 and \eqn{y_i} is the actual phenotype which for censored data points is un-observed. Rigth censoring 
 occurs when \eqn{b_i} is also uknown, therefore, the only information available is  \eqn{a_i<y_i}. In 
 a time-to-event setting this means that we know that time to event exceeded the time at 
-censoring given by \eqn{a_i} . Left censoring occurs when \eqn{b_i} is unknown; therefore, 
-the only information available is: \eqn{y_i<b_i} . In BGLR censored outcomes are then specified 
-with three vectors, y, a and b. The configuration of the triplet   for un-censored, right-censored, 
+censoring given by \eqn{a_i}. Left censoring occurs when \eqn{b_i} is unknown; therefore, 
+the only information available is: \eqn{y_i<b_i}. In BGLR censored outcomes are then specified 
+with three vectors, \eqn{\boldsymbol y}, \eqn{\boldsymbol a} and \eqn{\boldsymbol b}. The configuration of the triplet   for un-censored, right-censored, 
 left-censored and interval censored are described in the table below. 
 
 \tabular{lccc}{
@@ -183,7 +183,7 @@ left-censored and interval censored are described in the table below.
    Un-censored       \tab NULL          \tab \eqn{y_i}  \tab NULL \cr
    Right censored    \tab \eqn{a_i}     \tab NA         \tab \eqn{\infty} \cr
    Left censored     \tab \eqn{-\infty} \tab NA         \tab \eqn{b_i} \cr
-   Interval censored \tab \eqn{b_i}     \tab NA         \tab \eqn{b_i}
+   Interval censored \tab \eqn{a_i}     \tab NA         \tab \eqn{b_i}
  } 
 
 The only modification introduced in the Gibbs sampler required for handling censored data points 
@@ -205,10 +205,10 @@ can be found in Albert & Chib (1993).
 
 They can be modeled using also the threshold model. Here we model, 
 \eqn{\pi_{ij}=P(Y_i \leq j)=\Phi(\eta_{ij})}, where \eqn{\eta_{ij}=\gamma_j- \boldsymbol x_i' \boldsymbol \beta},
-where \eqn{\Phi(\cdot)} is the standard normal cumulative distribution function, \eqn{\gamma_{ij}} is a threshold, the thresholds must satisfy, 
+where \eqn{\Phi(\cdot)} is the standard normal cumulative distribution function, \eqn{\gamma_j} is a threshold, the thresholds must satisfy, 
 \eqn{-\infty = \gamma_0 < \gamma_1 < \cdots < \gamma_J=\infty}, \eqn{J} is the cardinality of 
 \eqn{\boldsymbol{y}}{y}. In order to run a regression for ordinal outomes, the response must be
-coded as \eqn{0, 1,...,J}, and the data should be ordered accordingly, the argument response_type should 
+coded as \eqn{1,...,J}, and the data should be ordered accordingly, the argument response_type should 
 be set to "ordinal". More details about this model can be found in Albert & Chib (1993).
 
 }
@@ -269,6 +269,7 @@ demo(Bernoulli)
 demo(ordinal)
 
 #Censored traits
+demo(censored)
 
 }
 
