@@ -93,8 +93,7 @@ WARNING: the ped_file should be absolute
 */
 
 /*
-FIXME: 	Free allocated memory for temporary objects
-	Better way to know the number of individuals ans snps
+FIXME: 	Better way to know the number of individuals and snps (no way, only if the user already knows!!!)
 	Better way to know allele one and allele two
 	Detect snps that are non biallelic
 */
@@ -255,6 +254,14 @@ SEXP read_ped(SEXP Ped)
 				}	
 			}
 		} 
+
+                //Free memory
+
+                free(allele_one);
+                free(allele_two);
+                free(Line_copy);
+                free(Line);
+
 		fclose(input);       
         }else{
 		error("It was not possible to open %s",ped_file);
