@@ -5,7 +5,7 @@ setwd(tempdir())
 data(wheat) 
 
 n<-599   # should be <= 599
-p<-300   # should be <= than 1279=ncol(X)
+p<-1279   # should be <= than 1279=ncol(X)
 nQTL<-30 # should be <= than p
 X<-wheat.X[1:n,1:p]
 
@@ -25,14 +25,16 @@ error<-rnorm(n=n,sd=sqrt(0.5))
 y<-signal +error 
 
 
-nIter=500;
-burnIn=400;
+nIter=5000;
+burnIn=2500;
 thin=10;
 saveAt='';
 S0=NULL;
 weights=NULL;
 R2=0.5;
-ETA<-list(list(X=X,model='BayesB'))
+ETA<-list(list(X=X,model='BayesB',probIn=0.05))
   
 fit_BB=BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,df0=5,S0=S0,weights=weights,R2=R2)
 plot(fit_BB$yHat,y)
+
+

@@ -90,6 +90,8 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 
     if(is.null(LT$S0))
     {
+        if(LT$df0<2) stop("df0>2 in BRR in order to set S0\n")
+
 	LT$MSx=sum(LT$x2)/n-sumMeanXSq       
 	LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(LT$MSx))*(LT$df0-2)  
 	cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
@@ -293,6 +295,8 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 
     if (is.null(LT$S0)) 
     {
+          if(LT$df0<2) stop("df0>2 in RKHS in order to set S0\n");
+
 	  LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(mean(LT$d)))*(LT$df0-2)
           cat(paste("  default value of S0 in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
     }
@@ -375,6 +379,8 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 
   if(is.null(LT$S0))
   {
+     if(LT$df0<2) stop("df0>2 in BayesB in order to set S0\n");
+
      LT$S0=var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
      cat(paste(" Scale paramter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
   }
@@ -459,6 +465,9 @@ setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$countsOut=LT$counts - LT$countsIn
   
   if(is.null(LT$S0)){
+
+    if(LT$df0<2) stop("df0>2 in BayesC in order to set S0\n")
+
     LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
     cat(paste("  Scale parameter in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
   }
@@ -521,10 +530,11 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   }
   if(is.null(LT$S0))
   {
+     if(LT$df0<2) stop("df0>2 in BayesA in order to set S0\n")
      LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)
      cat(paste(" Scale paramter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
   }
-  # Improvement: Treat Scale as random, asign a gamma density 
+  # Improvement: Treat Scale as random, assign a gamma density 
   
   LT$b=rep(0,LT$p)
    
