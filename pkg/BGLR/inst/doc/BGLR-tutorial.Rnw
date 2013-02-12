@@ -1,0 +1,4 @@
+%\VignetteIndexEntry{BGLR-tutorial}
+\documentclass{article}
+\begin{document}
+\end{document}

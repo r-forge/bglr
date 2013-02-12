@@ -15,18 +15,21 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
         stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }
     
+    #This is very inefficient
     #weights
-    for (i in 1:n) 
-    { 
-      LT$X[i, ] = weights[i] * LT$X[i, ]  
-    }
+    #for (i in 1:n) 
+    #{ 
+    #  LT$X[i, ] = weights[i] * LT$X[i, ]  
+    #}
     
-    LT$x2=rep(0,LT$p)
+    #LT$x2=rep(0,LT$p)
+    #for(i in 1:LT$p)
+    #{ 
+    #  LT$x2[i]=sum(LT$X[,i]^2) 
+    #}
     
-    for(i in 1:LT$p)
-    { 
-      LT$x2[i]=sum(LT$X[,i]^2) 
-    }
+    LT$X=sweep(LT$X,1L,weights,FUN="*")        #weights
+    LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
 	
     LT$b=rep(0,LT$p)
     LT$post_b=rep(0,LT$p)
@@ -62,20 +65,27 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
       stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }
  
+    #This is very inefficient
     #weights
-    for (i in 1:n) 
-    { 
-       LT$X[i, ] = weights[i]*LT$X[i, ]  
-    }
-	
-    LT$x2=rep(0,LT$p)
-    sumMeanXSq=0
+    #for (i in 1:n) 
+    #{ 
+    #   LT$X[i, ] = weights[i]*LT$X[i, ]  
+    #}
     
-    for(i in 1:LT$p)
-    { 
-	LT$x2[i]=sum(LT$X[,i]^2) 
-	sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-    }
+    #LT$x2=rep(0,LT$p)
+    #sumMeanXSq=0
+    
+    #for(i in 1:LT$p)
+    #{ 
+	#	LT$x2[i]=sum(LT$X[,i]^2) 
+	#	sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
+    #}
+    
+    
+    LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
+    LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
+    sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
+    
 
     if(is.null(LT$df0))
     {
@@ -133,19 +143,26 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
         stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }
  
+    #This is very inefficient
     #weights
-    for (i in 1:n) 
-    { 
-       LT$X[i, ] = weights[i]*LT$X[i, ]  
-    }
+    #for (i in 1:n) 
+    #{ 
+    #   LT$X[i, ] = weights[i]*LT$X[i, ]  
+    #}
 	
-    LT$x2=rep(0,LT$p)
-    sumMeanXSq=0
-    for(i in 1:LT$p)
-    { 
-      LT$x2[i]=sum(LT$X[,i]^2)
-      sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-    }
+    #LT$x2=rep(0,LT$p)
+    #sumMeanXSq=0
+    #for(i in 1:LT$p)
+    #{ 
+    #  LT$x2[i]=sum(LT$X[,i]^2)
+    #  sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
+    #}
+    
+    
+    LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
+    LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
+    sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
+	
     LT$MSx=sum(LT$x2)/n-sumMeanXSq
 
     # Prior
@@ -339,20 +356,24 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   
   LT$p=ncol(LT$X)
 
-
+  #This is very inefficient
   #weights
-  for (i in 1:n) 
-  { 
-     LT$X[i, ] = weights[i]*LT$X[i, ]  
-  }
+  #for (i in 1:n) 
+  #{ 
+  #   LT$X[i, ] = weights[i]*LT$X[i, ]  
+  #}
 	
-  LT$x2=rep(0,LT$p)
-  sumMeanXSq=0
-  for(i in 1:LT$p)
-  { 
-      LT$x2[i]=sum(LT$X[,i]^2)
-      sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-  }
+  #LT$x2=rep(0,LT$p)
+  #sumMeanXSq=0
+  #for(i in 1:LT$p)
+  #{ 
+  #    LT$x2[i]=sum(LT$X[,i]^2)
+  #    sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
+  #}
+
+  LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
+  LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
+  sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
   LT$MSx=sum(LT$x2)/n-sumMeanXSq
 
   
@@ -421,16 +442,22 @@ setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$X=as.matrix(LT$X) 
   
   LT$p=ncol(LT$X)
-
-  for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
+  
+  #Drop these because it is very inefficient
+  #for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
 	
-  LT$x2=rep(0,LT$p)
-  sumMeanXSq=0
-  for(i in 1:LT$p)
-  { 
-      LT$x2[i]=sum(LT$X[,i]^2)
-      sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-  }
+  #LT$x2=rep(0,LT$p)
+  #sumMeanXSq=0
+  #for(i in 1:LT$p)
+  #{ 
+  #    LT$x2[i]=sum(LT$X[,i]^2)
+  #    sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
+  #}
+
+  LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
+  LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
+  sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
+
   LT$MSx=sum(LT$x2)/n-sumMeanXSq
 
   
@@ -508,15 +535,20 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$X=as.matrix(LT$X)
   LT$p=ncol(LT$X)
 
-  for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
+  #Drop this because is very inefficient
+  #for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
 	
-  LT$x2=rep(0,LT$p)
-  sumMeanXSq=0
-  for(i in 1:LT$p)
-  { 
-      LT$x2[i]=sum(LT$X[,i]^2)
-      sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-  }
+  #LT$x2=rep(0,LT$p)
+  #sumMeanXSq=0
+  #for(i in 1:LT$p)
+  #{ 
+  #    LT$x2[i]=sum(LT$X[,i]^2)
+  #    sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
+  #}
+  
+  LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
+  LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
+  sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
   LT$MSx=sum(LT$x2)/n-sumMeanXSq
 
   if(is.null(LT$df0))

@@ -8,4 +8,4 @@ Depends: R (>= 2.12.2)
 Description: Bayesian Generalized Linear Regression
 LazyLoad: true
 License: GPL-3
-Packaged: 2012-11-02 16:21:00 UTC; paulino
+Packaged: 2013-02-12 18:43:14 UTC; paulino
