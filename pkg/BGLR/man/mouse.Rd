@@ -5,10 +5,9 @@
 
 The mice data comes from an experiment carried out to detect and locate QTLs for complex traits in a 
 mice population (Valdar et al. 2006a; 2006b). This data has already been analyzed for comparing genome-assisted 
-genetic evaluation methods (Legarra et al. 2008). The data file consists of 1882 individuals 
-(168 full-sib families), each genotyped for 10,946 polymorphic markers. The trait here 
-here is body mass index (BMI), pre-corrected by body weight, season, month and day. Mice were 
-housed in 359 cages; on average, each litter was allocated into 2.84 cages.
+genetic evaluation methods (Legarra et al. 2008). The data file consists of 1825 individuals,  
+each genotyped for 10,346 polymorphic markers. The trait here 
+here is body mass index (BMI), and additional information about body weight, season, month and day.
 
 }
 
@@ -18,9 +17,9 @@ housed in 359 cages; on average, each litter was allocated into 2.84 cages.
 
 \format{
 
- Matrix mouse.A contains the pedigree. The vector mouse.cageID contains the cage id,
- the vector mouse.ID contains an in for each mouse. The matrix mouse.X contains the markes information and 
- mouse.y corresponds to the body mass index.  
+ Matrix mouse.A contains the pedigree.
+ The matrix mouse.X contains the markes information and 
+ mouse.pheno contains phenotypical information.
 
 }
 

@@ -3,7 +3,7 @@
 \title{Molecular markers}
 \description{
 
- Is a matrix (1822 x 10946) with SNP markers.
+ Is a matrix (1825 x 10346) with SNP markers.
 
 }
 
