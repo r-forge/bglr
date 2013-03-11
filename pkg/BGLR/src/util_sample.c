@@ -181,7 +181,8 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
 SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP probInside,SEXP ncores)
 {
   int i,j,rows,cols;
-  double sigma2e, logProbIn, logProbOut, probIn, sum1,sum2, logOdds,tmp;
+  double sigma2e, probIn, sum1,sum2, logOdds,tmp;
+  //double logProbIn, logProbOut;
   double *pX, *perror, *pb, *eIn, *eOut;
   int *pd;
   int useCores, haveCores;
@@ -243,15 +244,20 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
         #pragma omp for reduction(+:sum1,sum2) schedule(static)
 	for(i=0; i<rows;i++)
 	{
-	  sum1+=dnorm(eIn[i],0,sqrt(sigma2e),1); 
-	  sum2+=dnorm(eOut[i],0,sqrt(sigma2e),1);
+	  //sum1+=dnorm(eIn[i],0,sqrt(sigma2e),1); 
+	  //sum2+=dnorm(eOut[i],0,sqrt(sigma2e),1);
+            sum1+=eIn[i]*eIn[i];
+            sum2+=eOut[i]*eOut[i];
 	}
      }
      
-     logProbIn=log(probIn)+sum1;
-     logProbOut =log(1 - probIn)+sum2;
-     logOdds = logProbIn - logProbOut;
+     //logProbIn=log(probIn)+sum1;
+     //logProbOut =log(1 - probIn)+sum2;
+     //logOdds = logProbIn - logProbOut;
+
+     logOdds=log(probIn/(1-probIn))+0.5/sigma2e*(sum2-sum1);
      tmp=exp(logOdds)/(1 + exp(logOdds));
+
      if(unif_rand()<tmp)
      {
          pd[j]=1;

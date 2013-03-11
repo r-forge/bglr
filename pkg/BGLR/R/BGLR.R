@@ -14,20 +14,7 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
     {
         stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }
-    
-    #This is very inefficient
-    #weights
-    #for (i in 1:n) 
-    #{ 
-    #  LT$X[i, ] = weights[i] * LT$X[i, ]  
-    #}
-    
-    #LT$x2=rep(0,LT$p)
-    #for(i in 1:LT$p)
-    #{ 
-    #  LT$x2[i]=sum(LT$X[,i]^2) 
-    #}
-    
+        
     LT$X=sweep(LT$X,1L,weights,FUN="*")        #weights
     LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
 	
@@ -63,24 +50,7 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     if(nrow(LT$X)!=n)
     {
       stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
-    }
- 
-    #This is very inefficient
-    #weights
-    #for (i in 1:n) 
-    #{ 
-    #   LT$X[i, ] = weights[i]*LT$X[i, ]  
-    #}
-    
-    #LT$x2=rep(0,LT$p)
-    #sumMeanXSq=0
-    
-    #for(i in 1:LT$p)
-    #{ 
-	#	LT$x2[i]=sum(LT$X[,i]^2) 
-	#	sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-    #}
-    
+    }   
     
     LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
     LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
@@ -141,23 +111,7 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     if(nrow(LT$X)!=n)
     {
         stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
-    }
- 
-    #This is very inefficient
-    #weights
-    #for (i in 1:n) 
-    #{ 
-    #   LT$X[i, ] = weights[i]*LT$X[i, ]  
-    #}
-	
-    #LT$x2=rep(0,LT$p)
-    #sumMeanXSq=0
-    #for(i in 1:LT$p)
-    #{ 
-    #  LT$x2[i]=sum(LT$X[,i]^2)
-    #  sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-    #}
-    
+    } 
     
     LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
     LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
@@ -263,7 +217,9 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 	LT$K = as.matrix(LT$K)
         if(nrow(LT$K)!=ncol(LT$K)) stop(paste(" Kermel for linear term ",j, " is not a square matrix\n",sep=""))
 
-	#?# cambie     T = diag(weights)   LT$K = T %*% LT$K %*% T por lo que sigue abajo diag(weights)lo hace muy ineficiente
+	#This code was rewritten to speed up computations
+        #T = diag(weights)   
+        #LT$K = T %*% LT$K %*% T 
 
 	for(i in 1:nrow(LT$K))
         {
@@ -356,21 +312,6 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   
   LT$p=ncol(LT$X)
 
-  #This is very inefficient
-  #weights
-  #for (i in 1:n) 
-  #{ 
-  #   LT$X[i, ] = weights[i]*LT$X[i, ]  
-  #}
-	
-  #LT$x2=rep(0,LT$p)
-  #sumMeanXSq=0
-  #for(i in 1:LT$p)
-  #{ 
-  #    LT$x2[i]=sum(LT$X[,i]^2)
-  #    sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-  #}
-
   LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
   LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
   sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
@@ -441,18 +382,7 @@ setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   #Be sure that your X is a matrix
   LT$X=as.matrix(LT$X) 
   
-  LT$p=ncol(LT$X)
-  
-  #Drop these because it is very inefficient
-  #for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
-	
-  #LT$x2=rep(0,LT$p)
-  #sumMeanXSq=0
-  #for(i in 1:LT$p)
-  #{ 
-  #    LT$x2[i]=sum(LT$X[,i]^2)
-  #    sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-  #}
+  LT$p=ncol(LT$X) 
 
   LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
   LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
@@ -534,17 +464,6 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 {  
   LT$X=as.matrix(LT$X)
   LT$p=ncol(LT$X)
-
-  #Drop this because is very inefficient
-  #for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
-	
-  #LT$x2=rep(0,LT$p)
-  #sumMeanXSq=0
-  #for(i in 1:LT$p)
-  #{ 
-  #    LT$x2[i]=sum(LT$X[,i]^2)
-  #    sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-  #}
   
   LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
   LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
@@ -597,7 +516,7 @@ welcome=function()
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@colpos.mx              #\n");
-  cat("#    (   )     (   )   December, 2012                                #\n");
+  cat("#    (   )     (   )   March, 2013                                   #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
@@ -657,7 +576,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.12.1 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0 (2012-12-21)"
+  BGLR.version = "1.0 (2013-03-11)"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -911,7 +830,6 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                               BayesC = setLT.BayesC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
                               BayesB = setLT.BayesB(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
-                              #BEN=setLT.BEN(LT=ETA[[i]],n=n,j=i,weights=weights,y=y,nLT=nLT,R2,saveAt=saveAt)
                               )
         }
     }
@@ -1534,131 +1452,4 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
     out$ETA = NULL
     class(out) = "BLR"
     return(out)
-}
-
-
-if(FALSE){
-
-###BAYESIAN ELASTIC NET ###########################################################################################################################################   
-#Bayesian Elastic Net LASSO
-#Kyung et al., 2010
-setLT.BEN=function(LT,n,j,y,weights,nLT,R2,saveAt)
-{
-    LT$X=as.matrix(LT$X)
-    LT$p=ncol(LT$X)
-
-    if(any(is.na(LT$X))){stop(paste("LP ",j," has NAs in X",sep=""))}
-    if(nrow(LT$X)!=n){stop(paste("   Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))}
-
-    for (i in 1:n) { LT$X[i, ] = weights[i]*LT$X[i, ]  }
-
-    LT$x2=rep(0,LT$p)
-    sumMeanXSq=0
-    for(i in 1:LT$p)
-    {
-      LT$x2[i]=sum(LT$X[,i]^2)
-      sumMeanXSq=sumMeanXSq+mean(LT$X[,i])^2
-    }
-    LT$MSx=sum(LT$x2)/n-sumMeanXSq
-
-    # Prior
-    if(is.null(LT$type))
-    {
-                LT$type="gamma"
-                cat(paste("  By default, lambda1^2 and lambda2 in LP ",j,"  were set to gamma.\n",sep=""))
-    }
-   
-    if(LT$type!="gamma") stop("Only gamma type priors are allowed for lambda1^2 and lambda2");
-
-    #Lambda1
-    if(is.null(LT$lambda1))
-    {
-        LT$lambda1=0.5
-        cat(paste("  Initial value of lambda1 in LP ",j," was missing and was set to ",LT$lambda1,"\n",sep=""))
-    }
-    if(is.null(LT$shape1))
-    {
-        LT$shape1=10
-        cat(paste("  shape1 parameter for lambda1^2 in LP ",j," was missing and was set to ",LT$shape1,"\n",sep=""))
-    }
-    if(is.null(LT$rate1))
-    {
-         LT$rate1=1
-         cat(paste("  rate1 parameter for lambda1^2 in LP ",j," was missing and was set to ",LT$rate1,"\n",sep=""))
-    } 
-
-    #Lambda2
-    if(is.null(LT$lambda2))
-    {
-        LT$lambda2=0.5
-        cat(paste("  Initial value of lambda2 in LP ",j," was missing and was set to ",LT$lambda2,"\n",sep=""))
-    }
-    if(is.null(LT$shape2))
-    {
-        LT$shape2=10
-        cat(paste("  shape2 parameter for lambda2 in LP ",j," was missing and was set to ",LT$shape2,"\n",sep=""))
-    }
-    if(is.null(LT$rate2))
-    {
-         LT$rate2=1
-         cat(paste("  rate2 parameter for lambda2 in LP ",j," was missing and was set to ",LT$rate2,"\n",sep=""))
-    }
-
-    LT$b=rep(0,LT$p)
-    LT$post_b=rep(0,LT$p)
-    LT$post_b2=rep(0,LT$p)
-    
-    tmp=((var(y,na.rm=TRUE)*R2/nLT)/(LT$MSx))
-    LT$tau2=rep(tmp,LT$p)
-    LT$post_tau2=rep(0,LT$p)
-    LT$post_lambda1=0
-    LT$post_lambda2=0
-
-    #Output_file
-    fname=paste(saveAt,"ETA_",j,"_lambda1_lambda2.dat",sep="")
-    LT$NamefileOut=fname
-    LT$fileOut=file(description=fname,open="w")
-   
-    LT$X=as.vector(LT$X)
-    return(LT)
-
-}
-
-##########################################
-                    if(ETA[[j]]$model=="BEN")
-                    {
-                        #Update Betas
- 			varBj = varE * (ETA[[j]]$tau2)/(1+ETA[[j]]$lambda2*ETA[[j]]$tau2)
-                    	ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2,  ETA[[j]]$b,
-                                                e, varBj, varE, minAbsBeta,ncores)
-                    	ETA[[j]]$b = ans[[1]]
-                    	e=ans[[2]]
-                        
-                        #Update tau2
-                        nu=sqrt(ETA[[j]]$lambda1^2*varE/ETA[[j]]$b^2)         
-                        tmp=try(1/rinvGauss(ETA[[j]]$p,nu, ETA[[j]]$lambda1^2))
-                	if(any(is.nan(tmp)) | any(is.infinite(tmp)))
-                	{
-                  		cat("Warning tau2 was not updated due to numeric problems with beta\n")
-                	}else
-                	{
-                  		ETA[[j]]$tau2=tmp
-                	} 
-
-                        #Update lambda1 and lambda2
-                        rate = sum(ETA[[j]]$tau2)/2 + ETA[[j]]$rate1
-                        shape = ETA[[j]]$p + ETA[[j]]$shape1
-                        ETA[[j]]$lambda1 = sqrt(rgamma(rate = rate, shape = shape, n = 1))
-
-                        rate=sum(ETA[[j]]$b^2)/(2*varE) + ETA[[j]]$rate2
-                        shape=ETA[[j]]$p/2+ETA[[j]]$shape2
-                        ETA[[j]]$lambda2 = rgamma(1,shape=shape,rate=rate)
-
-                        deltaSS=deltaSS+sum(ETA[[j]]$b^2*(1/ETA[[j]]$tau2+ETA[[j]]$lambda2))
-                        deltadf=deltadf+ETA[[j]]$p
-
-                    } #END BEN
-
-##############################################################################################################################################	
-
 }

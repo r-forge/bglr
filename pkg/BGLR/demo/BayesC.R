@@ -5,7 +5,7 @@ setwd(tempdir())
 data(wheat) 
 
 n<-599   # should be <= 599
-p<-300   # should be <= than 1279=ncol(X)
+p<-1279   # should be <= than 1279=ncol(X)
 nQTL<-30 # should be <= than p
 X<-wheat.X[1:n,1:p]
 
@@ -25,8 +25,8 @@ error<-rnorm(n=n,sd=sqrt(0.5))
 y<-signal +error 
 
 
-nIter=500;
-burnIn=100;
+nIter=5000;
+burnIn=2500;
 thin=3;
 saveAt='';
 S0=NULL;

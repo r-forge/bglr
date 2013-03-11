@@ -5,8 +5,6 @@
 #    Whole Genome Regression and Prediction Methods Applied to Plant and Animal Breeding, 
 #    Genetics, 2012.
 
-#3.- Activate/Delete BEN
-
 #check unused variables, 
 
 source('R/BGLR.R')
