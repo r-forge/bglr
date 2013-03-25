@@ -53,7 +53,7 @@ types of Bayesian regression models,  including fixed effects, Bayesian Lasso (B
 and Bayesian Ridge Regression. BLR can only handle continuous outcomes. We have produced a modified (beta) 
 version of BLR  (BGLR=Bayesian Generalized Linear Regression) that extends BLR by allowing regressions for 
 binary and censored outcomes. Most of the inputs, processes and outputs are as in BLR. Two supporting 
-documents (<a href="BLR.pdf">BLR.pdf</a> and <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3091623/">http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3091623/</a>) provide additional 
+documents (<a href="BGLR.pdf">BGLR.pdf</a> and <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3091623/">http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3091623/</a>) provide additional 
 information about that. Here we focus on describing changes in inputs, internal process and outputs introduced 
 to handle binary and censored outcomes. Users that are not familiar with BLR are strongly encouraged to 
 first read BLR.pdf. Future developments will be released first in 
