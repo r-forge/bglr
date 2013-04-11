@@ -97,6 +97,84 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     return(LT)
 }
 
+#Ridge regression using windows
+setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,nwindows)
+{
+       
+    LT$X=as.matrix(LT$X)
+    LT$p=ncol(LT$X)
+    LT$nwindows=nwindows
+	
+    if(any(is.na(LT$X)))
+    { 
+      stop(paste(" LP ",j," has NAs in X",sep=""))
+    }
+    
+    if(nrow(LT$X)!=n)
+    {
+      stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
+    }   
+    
+    LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
+    LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
+    sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
+    
+
+    if(is.null(LT$df0))
+    {
+	LT$df0=5
+	cat(paste(" Degree of freedom of LP ",j,"  set to default value (",LT$df0,").\n",sep=""))
+    }
+
+    if(is.null(LT$R2))
+    { 
+        LT$R2=R2/nLT
+    }
+
+    if(is.null(LT$S0))
+    {
+        if(LT$df0<2) stop("df0>2 in BRR in order to set S0\n")
+
+	LT$MSx=sum(LT$x2)/n-sumMeanXSq       
+	LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(LT$MSx))*(LT$df0-2)  
+	cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
+    }
+
+    windows_columns=list()
+    if(nwindows>1)
+    {
+        s=as.integer(LT$p/nwindows)
+        for(i in 1:(nwindows-1))
+        {
+           windows_columns[[i]]=c(1:s)+s*(i-1)
+        }
+        windows_columns[[nwindows]]=c(((nwindows-1)*s+1):LT$p)
+    }else{
+          stop("It does not make any sense to call this function with 1 window!!!\n")
+    }
+
+    LT$windows_columns=windows_columns
+	
+    LT$b=rep(0,LT$p)
+    LT$post_b=rep(0,LT$p)
+    LT$post_b2=rep(0,LT$p)
+    LT$varB=rep(LT$S0/(LT$df0-2),LT$p)
+    LT$post_varB=0                 
+    LT$post_varB2=0
+    fname=paste(saveAt,"ETA_",j,"_varB.dat",sep=""); 
+    
+    if(rmExistingFiles)
+    { 
+       unlink(fname) 
+    }
+
+    LT$NamefileOut=fname
+    LT$fileOut=file(description=fname,open="w")
+    LT$X=as.vector(LT$X)
+
+    return(LT)
+}
+
 ## Bayesian LASSO ############################################################
 setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
@@ -214,8 +292,10 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 {
     if(is.null(LT$V))
     {
+        if(is.null(LT$K)) stop(paste(" Kernel for linear term ",j, " was not provided, specify it with list(K=?,model='RKHS'), where ? is the kernel matrix\n",sep=""))
+
 	LT$K = as.matrix(LT$K)
-        if(nrow(LT$K)!=ncol(LT$K)) stop(paste(" Kermel for linear term ",j, " is not a square matrix\n",sep=""))
+        if(nrow(LT$K)!=ncol(LT$K)) stop(paste(" Kernel for linear term ",j, " is not a square matrix\n",sep=""))
 
 	#This code was rewritten to speed up computations
         #T = diag(weights)   
@@ -818,7 +898,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
     if (nLT > 0) {
         for (i in 1:nLT) {
-            if (!(ETA[[i]]$model %in% c("FIXED", "BRR", "BL", "BayesA", "BayesB","BayesC", "RKHS"))) 
+            if (!(ETA[[i]]$model %in% c("FIXED", "BRR", "BL", "BayesA", "BayesB","BayesC", "RKHS","BRR_windows"))) 
             {
                 stop(paste(" Error in ETA[[", i, "]]", " model ", ETA[[i]]$model, " not implemented (note: evaluation is case sensitive).", sep = ""))
             }
@@ -829,7 +909,9 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                               RKHS = setLT.RKHS(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BayesC = setLT.BayesC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
-                              BayesB = setLT.BayesB(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
+                              BayesB = setLT.BayesB(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
+                              BRR_windows = setLT.BRR_windows(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles, 
+                                                              nwindows=ETA[[i]]$nwindows)
                               )
         }
     }
@@ -876,6 +958,24 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   SS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0
                   ETA[[j]]$varB = SS/rchisq(df = DF, n = 1)
                 }# END BRR
+                
+                if(ETA[[j]]$model=="BRR_windows"){
+                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b,
+                                             e, ETA[[j]]$varB, varE, minAbsBeta, ncores)
+		   ETA[[j]]$b = ans[[1]]
+                   e = ans[[2]]
+
+                   tmp=numeric()
+                   for(nw in 1:ETA[[j]]$nwindows)
+                   {
+                        index=ETA[[j]]$windows_columns[[nw]]
+			DF = ETA[[j]]$df0 + length(index)
+                  	SS = sum((ETA[[j]]$b[index])^2) + ETA[[j]]$S0
+                        tmp=c(tmp,rep(SS/rchisq(df = DF, n = 1),length(index)))
+                   }
+                   ETA[[j]]$varB=tmp
+                }
+
 
                 ## Bayesian LASSO ####################################################################
                 if (ETA[[j]]$model == "BL") {

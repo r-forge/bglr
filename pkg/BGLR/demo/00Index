@@ -1,10 +1,11 @@
 BL		Bayesian LASSO
 BRR		Bayesian Ridge Regression
-RKHS		Reproducing kernel Hibert space
+BRR_windows     Bayesian Ridge Regression with sliding windows
+RKHS		Reproducing kernel Hilbert spaces
+RKHS_KA		Reproducing kernel Hilbert spaces with kernel averaging
 BayesC		BayesC-pi
 BA		BayesA
 BB		BayesB
-BEN		Bayesian Elastic Net LASSO
 Bernoulli	Probit regression
 ordinal		Ordinal regression
 read_bed	Read a BED file
