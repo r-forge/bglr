@@ -6,8 +6,8 @@
 
 #ifdef SUPPORT_OPENMP
   #include <omp.h>
-  #define CSTACK_DEFNS 7
-  #include "Rinterface.h"
+  //#define CSTACK_DEFNS 7
+  //#include "Rinterface.h"
 #endif
 
 /*
@@ -100,7 +100,7 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
    
 	
     #ifdef SUPPORT_OPENMP
-	  R_CStackLimit=(uintptr_t)-1;
+	  //R_CStackLimit=(uintptr_t)-1;
           useCores=INTEGER_VALUE(ncores);
           haveCores=omp_get_num_procs();
           if(useCores<=0 || useCores>haveCores) useCores=haveCores;
@@ -209,7 +209,7 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
   eIn=(double *) R_alloc(rows,sizeof(double));
  
   #ifdef SUPPORT_OPENMP
-          R_CStackLimit=(uintptr_t)-1;
+          //R_CStackLimit=(uintptr_t)-1;
           useCores=INTEGER_VALUE(ncores);
           haveCores=omp_get_num_procs();
           if(useCores<=0 || useCores>haveCores) useCores=haveCores;

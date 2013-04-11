@@ -1429,6 +1429,11 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
             if(ETA[[i]]$model=="RKHS")
             {
                ETA[[i]]$SD.u=sqrt(ETA[[i]]$post_u2 - ETA[[i]]$post_u^2)
+               ETA[[i]]$u=ETA[[i]]$post_u
+               ETA[[i]]$uStar=ETA[[i]]$post_uStar
+               ETA[[i]]$varU=ETA[[i]]$post_varU
+               tmp=which(names(ETA[[i]])%in%c("post_varU","post_uStar","post_u","post_u2"))
+               ETA[[i]]=ETA[[i]][-tmp]
             }
 
             if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC")) {
@@ -1543,9 +1548,9 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
                 out$SD.bR = out$ETA[[j]]$SD.varB
             }
             if (ETA[[j]]$model == "RKHS") {
-                out$u = out$ETA[[j]]$post_u
+                out$u = out$ETA[[j]]$u
                 out$SD.u =out$ETA[[j]]$SD.u
-                out$varU = out$ETA[[j]]$post_varU
+                out$varU = out$ETA[[j]]$varU
             }
         }
     }
