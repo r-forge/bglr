@@ -295,6 +295,9 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
         if(is.null(LT$K)) stop(paste(" Kernel for linear term ",j, " was not provided, specify it with list(K=?,model='RKHS'), where ? is the kernel matrix\n",sep=""))
 
 	LT$K = as.matrix(LT$K)
+
+        if(class(LT$K)!="matrix") stop(paste(" Kernel for linear term ",j, " should be a matrix, the kernel provided is of class ", class(LT$K),"\n",sep=" "))
+
         if(nrow(LT$K)!=ncol(LT$K)) stop(paste(" Kernel for linear term ",j, " is not a square matrix\n",sep=""))
 
 	#This code was rewritten to speed up computations
@@ -354,7 +357,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
           cat(paste("  default value of S0 in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
     }
     
-    LT$u=rep(0,nrow(LT$K))
+    LT$u=rep(0,nrow(LT$V))
     
     LT$varU=LT$S0/(LT$df0-2)
        
@@ -372,8 +375,8 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     LT$fileOut=file(description=fname,open="w")
     LT$post_varU=0
     LT$post_uStar = rep(0, LT$levelsU)
-    LT$post_u = rep(0, nrow(LT$K))
-    LT$post_u2 = rep(0,nrow(LT$K))
+    LT$post_u = rep(0, nrow(LT$V))
+    LT$post_u2 = rep(0,nrow(LT$V))
     
     #return object
     return(LT)
