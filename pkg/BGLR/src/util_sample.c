@@ -301,7 +301,7 @@ Version: 1.1-8
 Date: 2009/12/09
 Title: Supplementary distributions
 Author: Bob Wheeler <bwheelerg@gmail.com>
-*/
+
 
 void rgauss(double* normArray, int n, double mean, double sd)
 {
@@ -311,13 +311,15 @@ void rgauss(double* normArray, int n, double mean, double sd)
         PutRNGstate();
 }
 
+*/
+
 
 /*
 random inverse Gaussian values
 Follows Mitchael,J.R., Schucany, W.R. and Haas, R.W. (1976). Generating
 random roots from variates using transformations with multiple roots.
 American Statistician. 30-2. 88-91.
-*/
+
 
 void rinvGauss(double* normArray,int n,double mu,double lambda)
 { 
@@ -345,7 +347,11 @@ void rinvGauss(double* normArray,int n,double mu,double lambda)
         PutRNGstate();
 }
 
-// Random function for R
+*/
+
+/* 
+Random function for R
+
 void rinvGaussR(
         double *nup,
         double *lambdap,
@@ -381,4 +387,6 @@ void rinvGaussR(
                 }
         }
 }
+
+*/
 

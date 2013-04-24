@@ -699,16 +699,61 @@ extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
 #
 #Density function
 #f(x,nu,lambda)=sqrt[lambda/(2 pi x^3)]exp[-lambda(x-nu)^2/(2 x nu^2)]
-rinvGauss=function (n, nu, lambda)
+
+#rinvGauss=function (n, nu, lambda)
+#{
+#    n =if (length(n) > 1)
+#        length(n)
+#    else n
+#    N = max(length(nu), length(lambda))
+#    nu = rep(nu, length.out = N)
+#    lambda = rep(lambda, length.out = N)
+#    .C("rinvGaussR", as.double(nu), as.double(lambda), as.integer(n), as.integer(N), value = double(n))$value
+#}
+
+
+#This routine was take from VGAM
+#rinvGauss =function(n, nu, lambda) 
+#{
+#   use.n=if (length(n) > 1)
+#          length(n)
+#   else n
+#
+#   nu = rep(nu, len = use.n); 
+#   lambda = rep(lambda, len = use.n)
+#
+#   u = runif(use.n)
+#   Z = rnorm(use.n)^2 # rchisq(use.n, df = 1)
+#   phi = lambda / nu
+#   y1 = 1 - 0.5 * (sqrt(Z^2 + 4*phi*Z) - Z) / phi
+#   ans <- nu * ifelse((1+y1)*u > 1, 1/y1, y1)
+#   ans[nu     <= 0] = NaN
+#   ans[lambda <= 0] = NaN
+#   ans
+#}
+
+
+#This routine was adapted from rinvGauss function from S-Plus
+# Random variates from inverse Gaussian distribution
+# Reference:
+#      Chhikara and Folks, The Inverse Gaussian Distribution,
+#      Marcel Dekker, 1989, page 53.
+# GKS  15 Jan 98
+rinvGauss=function(n, nu, lambda)
 {
-    n =if (length(n) > 1)
-        length(n)
-    else n
-    N = max(length(nu), length(lambda))
-    nu = rep(nu, length.out = N)
-    lambda = rep(lambda, length.out = N)
-    .C("rinvGaussR", as.double(nu), as.double(lambda), as.integer(n), as.integer(N), value = double(n))$value
+	if(any(nu<=0)) stop("nu must be positive")
+	if(any(lambda<=0)) stop("lambda must be positive")
+	if(length(n)>1) n = length(n)
+	if(length(nu)>1 && length(nu)!=n) nu = rep(nu,length=n)
+	if(length(lambda)>1 && length(lambda)!=n) lambda = rep(lambda,length=n)
+        tmp = rnorm(n)
+	y2 = tmp*tmp
+	u = runif(n)
+	r1 = nu/(2*lambda) * (2*lambda + nu*y2 - sqrt(4*lambda*nu*y2 + nu*nu*y2*y2))
+	r2 = nu*nu/r1
+	ifelse(u < nu/(nu+r1), r1, r2)
 }
+
 
 #log-likelihood for ordinal data
 #y: response vector
@@ -991,7 +1036,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   nu = sqrt(varE) * ETA[[j]]$lambda/abs(ETA[[j]]$b)
                   tmp = NULL
                   try(tmp <- rinvGauss(n = ETA[[j]]$p, nu = nu, lambda = ETA[[j]]$lambda2))
-                  if (!is.null(tmp)) {
+                  if (!is.null(tmp) && !any(tmp<0)) {
                     if (!any(is.na(sqrt(tmp)))) {
                       ETA[[j]]$tau2 = 1/tmp
                     }
