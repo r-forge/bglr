@@ -1,5 +1,4 @@
 #This example will run a standard Bayesian LASSO
-
 rm(list=ls())
 setwd(tempdir())
 
@@ -18,7 +17,16 @@ saveAt='';
 S0=NULL;
 weights=NULL;
 R2=0.5;
-ETA<-list(list(X=wheat.X,model='BRR_windows',nwindows=10))
 
+#Custom windows
+
+#windows_list=list()
+#windows_list[[1]]=1:100
+#windows_list[[2]]=101:1279
+#ETA<-list(list(X=wheat.X,model='BRR_windows', windows_list=windows_list))
+
+#For automatic windows
+ETA<-list(list(X=wheat.X,model='BRR_windows', nwindows=2))
 fit_BRR=BGLR(y=y,ETA=ETA,nIter=nIter,burnIn=burnIn,thin=thin,saveAt=saveAt,df0=5,S0=S0,weights=weights,R2=R2)
+
 plot(fit_BRR$yHat,y)

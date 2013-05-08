@@ -98,12 +98,14 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 }
 
 #Ridge regression using windows
-setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,nwindows)
+setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
        
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
-    LT$nwindows=nwindows
+
+    if(is.null(LT$windows_list) & is.null(LT$nwindows)) stop("Provide windows_list or nwindows\n");
+    if((!is.null(LT$windows_list)) & (!is.null(LT$nwindows))) stop("Provide only windows_list or nwindows but no both\n");
 	
     if(any(is.na(LT$X)))
     { 
@@ -140,20 +142,31 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,nwindo
 	cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
     }
 
-    windows_columns=list()
-    if(nwindows>1)
+    if(is.null(LT$windows_list))
     {
-        s=as.integer(LT$p/nwindows)
-        for(i in 1:(nwindows-1))
-        {
-           windows_columns[[i]]=c(1:s)+s*(i-1)
-        }
-        windows_columns[[nwindows]]=c(((nwindows-1)*s+1):LT$p)
-    }else{
-          stop("It does not make any sense to call this function with 1 window!!!\n")
-    }
+    	windows_list=list()
+        nwindows=LT$nwindows
 
-    LT$windows_columns=windows_columns
+    	if(nwindows>1)
+    	{
+        	s=as.integer(LT$p/nwindows)
+        	for(i in 1:(nwindows-1))
+        	{
+           		windows_list[[i]]=c(1:s)+s*(i-1)
+        	}
+        	windows_list[[nwindows]]=c(((nwindows-1)*s+1):LT$p)
+    	}else{
+          	stop(paste("It does not make any sense to call this function with ",nwindows, " window(s)!!!\n"))
+    	}
+
+    	LT$windows_list=windows_list
+    }
+    
+    if(is.null(LT$nwindows))
+    {
+	LT$nwindows=length(LT$windows_list)
+        if(LT$nwindows<=1) stop(paste("The length of the window_list that you provided is ",LT$nwindows," we are expecting a list of length at least 2\n"));
+    }
 	
     LT$b=rep(0,LT$p)
     LT$post_b=rep(0,LT$p)
@@ -958,8 +971,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                               BayesC = setLT.BayesC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
                               BayesB = setLT.BayesB(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
-                              BRR_windows = setLT.BRR_windows(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles, 
-                                                              nwindows=ETA[[i]]$nwindows)
+                              BRR_windows = setLT.BRR_windows(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
                               )
         }
     }
@@ -1016,7 +1028,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                    tmp=numeric()
                    for(nw in 1:ETA[[j]]$nwindows)
                    {
-                        index=ETA[[j]]$windows_columns[[nw]]
+                        index=ETA[[j]]$windows_list[[nw]]
 			DF = ETA[[j]]$df0 + length(index)
                   	SS = sum((ETA[[j]]$b[index])^2) + ETA[[j]]$S0
                         tmp=c(tmp,rep(SS/rchisq(df = DF, n = 1),length(index)))
@@ -1206,7 +1218,8 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
             #Update yStar, this is the latent variable
             yStar[whichOne] = rtrun(mu = yHat[whichOne], sigma = rep(1, none), a = rep(0, none), b = rep(Inf, none))
             yStar[whichZero] = rtrun(mu = yHat[whichZero], sigma = rep(1, nzero), a = rep(-Inf, nzero), b = rep(0, nzero))
-
+            
+            
             #Update error
             e = yStar - yHat
         }
@@ -1470,7 +1483,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
             if (ETA[[i]]$model != "RKHS") {
                 ETA[[i]]$b = ETA[[i]]$post_b
                 ETA[[i]]$SD.b = sqrt(ETA[[i]]$post_b2 - ETA[[i]]$post_b^2)
-                tmp = which(names(ETA[[i]]) %in% c("post_b", "post_b2"))
+                tmp = which(names(ETA[[i]]) %in% c("post_b", "post_b2","X","x2"))
                 ETA[[i]] = ETA[[i]][-tmp]
             }
             
