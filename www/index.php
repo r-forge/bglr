@@ -1,4 +1,3 @@
-
 <!-- This is the project specific website template -->
 <!-- It can be changed as liked or replaced by other content -->
 
@@ -44,32 +43,45 @@ echo $contents; } ?>
 <!-- end of project description -->
 
 
-<p> <strong> Extension of BLR to deal with censored and binary traits </strong></p>
+<p> <strong> Extension of BLR to deal with censored, binary traits and new shrinkage parametric and non parametric methods</strong></p>
 
 <p>
-The BLR (Bayesian Linear Regression, <a href="http://cran.r-project.org/web/packages/BLR/index.html">http://cran.r-project.org/web/packages/BLR/index.html</a>)
+
+The BLR (Bayesian Linear Regression, 
+<a href="http://cran.r-project.org/web/packages/BLR/index.html">http://cran.r-project.org/web/packages/BLR/index.html</a>)s
 package of R (<a href="http://cran.r-project.org">http://cran.r-project.org</a>) implements several 
 types of Bayesian regression models,  including fixed effects, Bayesian Lasso (BL, Park and Casella 2008) 
 and Bayesian Ridge Regression. BLR can only handle continuous outcomes. We have produced a modified (beta) 
 version of BLR  (BGLR=Bayesian Generalized Linear Regression) that extends BLR by allowing regressions for 
-binary and censored outcomes. Most of the inputs, processes and outputs are as in BLR. Two supporting 
-documents (<a href="BGLR.pdf">BGLR.pdf</a> and <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3091623/">http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3091623/</a>) provide additional 
-information about that. Here we focus on describing changes in inputs, internal process and outputs introduced 
-to handle binary and censored outcomes. Users that are not familiar with BLR are strongly encouraged to 
-first read BLR.pdf. Future developments will be released first in 
-the R-forge webpage <a href="https://r-forge.r-project.org/projects/bglr/">https://r-forge.r-project.org/projects/bglr/</a> and 
-subsequently as R-packages
+binary and censored outcomes. Most of the inputs, processes and outputs are as in BLR. 
 </p>
 
-<p>The software and supporting documents can be downaload here <a HREF="BGLR-beta.zip">Download</a></p>
-
-<p> <strong> Work in progress: extension of BLR to include another shrinkage methods</strong> </p>
-
+<p>
 We are currently working in an extension of BLR to include another parametric and non parametric models, for example
 BayesA, BayesB, BayesCpi, Reproducing Kernel Hilbert Spaces, etc. A snapshoot of the current development can be found 
 in <a href="https://r-forge.r-project.org/R/?group_id=1525">https://r-forge.r-project.org/R/?group_id=1525</a>.
 
-<p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
+<br>
+</br>
+
+<b>Software packages:</b>
+                    <!-- PACKAGE TARBALL -->
+			<b><a href="BGLR_1.0.tar.gz"><img src="linux_30x30.gif" style="vertical-align:middle" title="linux" alt="linux">(.tar.gz)</a></b> | 
+                    <!-- WINDOWS BINARY -->
+		    <b><a href="BGLR_1.0.zip"><img src="win_30x30.gif" style="vertical-align:middle" title="windows" alt="windows">(.zip)</a></b> |
+                    <!-- MAC BINARY -->
+                    <b><a href="BGLR_1.0.tgz"><img src="osx_30x30.png" style="vertical-align:middle" title="macosx" alt="macosx">(.tgz)</a></b>  |	<B>Build status: <font style="color:green">Current</font></b></td></tr><tr><td>&nbsp;</td><td valign="center" align="right">
+		   
+</p>
+
+<p>BGLR package manual <a HREF="BGLR-manual.pdf">Download</a></p>
+<p>BGLR package tutorial <a HREF="BGLR-tutorial.pdf">Download</a></p>
+
+<p>
+Future developments will be released first in
+the R-forge webpage <a href="https://r-forge.r-project.org/projects/bglr/">https://r-forge.r-project.org/projects/bglr/</a> and
+subsequently as R-packages.
+</p>
 
 </body>
 </html>
