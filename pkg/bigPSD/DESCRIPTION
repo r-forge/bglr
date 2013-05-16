@@ -1,0 +1,16 @@
+Package: bigPSD
+Version: 1.0
+Date: 2013-05-13
+Title: Computation of genomic relationship matrixes and genomic distances.
+       This version uses a subset of functions originally found in the package RScaLAPACK (0.6.1).
+Author: Paulino Perez Rodriguez and Gustavo de los Campos
+Maintainer: Paulino Perez <perpdgo@colpos.mx>
+Depends: R (>= 2.15.1)
+SystemRequirements: OpenMPI (>= 1.6.2)
+Description: An R add-on package capable of computing genomic relationship matrixes and genomic distances.
+        This version uses a subset of functions originally found in the package RScaLAPACK (0.6.1),
+        which uses the high-performance ScaLAPACK library for the linear algebra computations. The 
+        RScaLAPACK package was written by Nagiza F. Samatova <samatovan@ornl.gov>, Srikanth Yoginath
+        <yoginathsb@ornl.gov>, David Bauer <bauerda@ornl.gov> and
+        Guruprasad Kora <koragh@ornl.gov>
+License: GPL-3
