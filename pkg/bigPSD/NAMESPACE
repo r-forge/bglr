@@ -1,5 +1,0 @@
-useDynLib(bigPSD)
-export(sla.chol,sla.chol2inv,sla.eigen,sla.factanal,
-       sla.gridExit,sla.gridInfo,sla.gridInit,sla.multiply,
-       sla.prcomp,sla.qr,sla.solve,sla.svd,sla.varimax,
-       sla.tcrossprod, read_sub_matrix,G_matrix)
