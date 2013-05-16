@@ -1,0 +1,23 @@
+Development started with a fresh copy of the package  RScaLAPACK, version 0.6.1
+http://cran.r-project.org/src/contrib/Archive/RScaLAPACK/RScaLAPACK_0.6.1.tar.gz
+
+
+Added/modified:
+	* NAMESPACE file added
+	* configure.ac file added
+	* configure file added
+	* scalapack-2.0.2 directory added. The tarball was obtained from http://www.netlib.org/scalapack/
+	  the file xerbla.f was added to scalapack-2.02/SRC and xerbla.o was added to ALLAUX object
+          file list in the corresponding Makefile to avoid compilation problems with the BLAS version included in R.
+	* Makefile.in in src subdirectory was modified
+	* Kernel_utils.c added
+        * Plink_utils.c added
+	* callpdgetcp.f added
+        * CRscalapack.c modified to include the routine  CRSF_tcrossprod
+        * Rscalapack.R modified to include sla.tcrossprod
+	* ParallelAgent.c modified to include sla.tcrossprod
+        * util_plink.R added
+	* Kernel_utils.c added
+
+Deleted:
+	
