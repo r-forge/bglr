@@ -678,11 +678,11 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
 .onAttach = function(library, pkg)
 {
   Rv = R.Version()
-  if(!exists("getRversion", baseenv()) || (getRversion() < "2.12"))
-    stop("This package requires R 2.12.1 or later")
+  if(!exists("getRversion", baseenv()) || (getRversion() < "2.15.0"))
+    stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0 (2013-03-11)"
+  BGLR.version = "1.0 (2013-05-17)"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -1351,7 +1351,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                         ETA[[j]]$post_b=ETA[[j]]$post_b*k+ETA[[j]]$b/nSums
                         ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
                         ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
-                        ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB2^2)/nSums
+                        ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB^2)/nSums
                         ETA[[j]]$post_d = ETA[[j]]$post_d * k + (ETA[[j]]$d)/nSums
                         ETA[[j]]$post_probIn = ETA[[j]]$post_probIn * k + (ETA[[j]]$probIn)/nSums
                     }
@@ -1513,10 +1513,26 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                ETA[[i]]=ETA[[i]][-tmp]
             }
 
-            if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC")) {
+            if (ETA[[i]]$model %in% c("BRR", "BayesA", "BayesC","BayesB")) {
                 ETA[[i]]$varB = ETA[[i]]$post_varB
                 ETA[[i]]$SD.varB = ETA[[i]]$post_varB2 - (ETA[[i]]$post_varB^2)
                 tmp = which(names(ETA[[i]]) %in% c("post_varB", "post_varB2"))
+                ETA[[i]] = ETA[[i]][-tmp]
+            }
+
+            if(ETA[[i]]$model %in% c("BayesB","BayesC"))
+            {
+	        ETA[[i]]$d=ETA[[i]]$post_d
+                ETA[[i]]$probIn=ETA[[i]]$post_probIn
+                tmp = which(names(ETA[[i]]) %in% c("post_d", "post_probIn"))
+                ETA[[i]] = ETA[[i]][-tmp]
+            }
+
+            if(ETA[[i]]$model=="BL")
+            {
+                ETA[[i]]$tau2=ETA[[i]]$post_tau2
+                ETA[[i]]$lambda=ETA[[i]]$post_lambda
+                tmp = which(names(ETA[[i]]) %in% c("post_tau2", "post_lambda","lambda2"))
                 ETA[[i]] = ETA[[i]][-tmp]
             }
         }
@@ -1617,6 +1633,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
             if (ETA[[j]]$model == "BL") {
                 out$bL = out$ETA[[j]]$b
                 out$SD.bL = out$ETA[[j]]$SD.b
+                out$lambda = out$ETA[[j]]$lambda
             }
             if (ETA[[j]]$model == "BRR") {
                 out$bR = out$ETA[[j]]$b
