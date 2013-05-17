@@ -49,8 +49,10 @@ sla.prcomp(x, retx=TRUE, center=TRUE, scale.=FALSE, tol=NULL, NPROWS, NPCOLS, MB
 }
 
 \examples{
+\dontrun{
 data(USArrests)
 sla.prcomp(USArrests, scale=TRUE, NPROWS=2, NPCOLS=2, MB=2)
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

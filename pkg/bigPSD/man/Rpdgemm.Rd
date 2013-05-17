@@ -50,10 +50,12 @@ computation.}
 }
 
 \examples{
+\dontrun{
 rnorm(10000)->x
 dim(x)=c(100,100)
 y<-matrix(rnorm(100*100),100,100)
 z<-sla.multiply(x,y, NPROWS=2, NPCOLS=2, MB=10);
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

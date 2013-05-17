@@ -56,6 +56,8 @@ sla.promax(x, m = 4, NPROWS=0, NPCOLS=0, MB=16)
 	\code{\link{factanal}}, \code{\link{Harman74.cor}}.}
 
 \examples{
+
+\dontrun{
 ## varimax with normalize = T is the default
 
 v1 <- c(1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,4,5,6)
@@ -68,6 +70,8 @@ m1 <- cbind(v1,v2,v3,v4,v5,v6)
 fa <- sla.factanal(m1, factors=3, rotation="sla.promax", NPROWS=2, NPCOLS=2, MB=2 )
 sla.varimax(fa$loadings, normalize = FALSE, NPROWS=2, NPCOLS=2, MB=2)
 sla.promax(fa$loadings, NPROWS=2, NPCOLS=2, MB=2)
+}
+
 }
 \concept{parallel}
 \keyword{multivariate}

@@ -43,11 +43,12 @@ computation.}
 }
 
 \examples{
-library(RScaLAPACK)
+\dontrun{
 rnorm(10000)->x
 dim(x)=c(100,100)
 x[lower.tri(x)]=t(x)[lower.tri(x)]
 sla.eigen(x, NPROWS=2, NPCOLS=2)
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

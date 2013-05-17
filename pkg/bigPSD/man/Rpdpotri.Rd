@@ -46,11 +46,12 @@ computation.}
 }
 
 \examples{
+\dontrun{
 rnorm(10000)->x
 dim(x)=c(100,100)
 # Generate a symmetric, positive definite matrix
 sla.chol2inv(x, NPROWS=2, NPCOLS=2)->y
-
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

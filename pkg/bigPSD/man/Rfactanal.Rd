@@ -160,6 +160,8 @@ control = NULL, NPROWS = 0, NPCOLS = 0, MB = 16, \dots)
 }
 
 \examples{
+
+\dontrun{
 # A little demonstration, v2 is just v1 with noise,
 # and same for v4 vs. v3 and v6 vs. v5
 # Last four cases are there to add noise
@@ -173,6 +175,7 @@ v6 <- c(1,1,1,2,1,3,3,3,4,3,1,1,1,2,1,6,5,4)
 m1 <- cbind(v1,v2,v3,v4,v5,v6)
 cor(m1)
 sla.factanal(m1, factors=3, rotation="sla.promax", NPROWS=2, NPCOLS=2, MB=2 )
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

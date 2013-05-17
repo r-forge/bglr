@@ -52,12 +52,13 @@ computation.}
 }
 
 \examples{
-library(RScaLAPACK)
+\dontrun{
 rnorm(10000)->x
 dim(x)=c(100,100)
 c(1,0*(1:99))->y
 dim(y)=c(100,1)
 sla.solve(x,y, NPROWS=2, NPCOLS=2)
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

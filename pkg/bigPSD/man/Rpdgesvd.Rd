@@ -51,10 +51,11 @@ computation.}
 }
 
 \examples{
-library(RScaLAPACK)
+\dontrun{
 rnorm(64*64)->x
 dim(x)=c(64,64)
 sla.svd(x, NPROWS=2, NPCOLS=2, MB=16)
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}

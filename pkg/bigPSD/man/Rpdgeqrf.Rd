@@ -53,10 +53,11 @@ sla.qr(A, NPROWS=0, NPCOLS=0, MB=16, RFLAG = 1, SPAWN = 1 )
 }
 
 \examples{
-library(RScaLAPACK)
+\dontrun{
 rnorm(10000)->x
 dim(x)=c(100,100)
 sla.qr(x, NPROWS=2,NPCOLS=2)
+}
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}
