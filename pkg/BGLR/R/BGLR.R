@@ -435,6 +435,15 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
   } 
 
+  if(is.null(LT$counts))
+  {
+    LT$counts=10
+    cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
+  }
+
+  LT$countsIn=LT$counts * LT$probIn
+  LT$countsOut=LT$counts - LT$countsIn
+
   if(is.null(LT$S0))
   {
      if(LT$df0<2) stop("df0>2 in BayesB in order to set S0\n");
@@ -461,7 +470,8 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
    
   LT$post_varB=0
   LT$post_varB2=0
-
+  LT$post_d=0
+  LT$post_probIn=0
   LT$post_b=rep(0,LT$p)
   LT$post_b2=rep(0,LT$p)
   
@@ -611,7 +621,7 @@ welcome=function()
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
-  cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@colpos.mx              #\n");
+  cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@gmail.com              #\n");
   cat("#    (   )     (   )   March, 2013                                   #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
@@ -1184,6 +1194,10 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                       SS = ETA[[j]]$b^2 + ETA[[j]]$S0
                       DF = ETA[[j]]$df0+1
                       ETA[[j]]$varB = SS/rchisq(df=DF, n = ETA[[j]]$p)
+                      mrkIn = sum(ETA[[j]]$d)
+                      ETA[[j]]$probIn = rbeta(shape1 = (mrkIn + ETA[[j]]$countsIn + 1),
+                                              shape2 = (ETA[[j]]$p - mrkIn + ETA[[j]]$countsOut + 1), n = 1)
+
                 }#End Bayes B
 
             }#Loop for
@@ -1338,6 +1352,8 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                         ETA[[j]]$post_b2=ETA[[j]]$post_b2*k+(ETA[[j]]$b^2)/nSums
                         ETA[[j]]$post_varB=ETA[[j]]$post_varB*k+(ETA[[j]]$varB)/nSums
                         ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB2^2)/nSums
+                        ETA[[j]]$post_d = ETA[[j]]$post_d * k + (ETA[[j]]$d)/nSums
+                        ETA[[j]]$post_probIn = ETA[[j]]$post_probIn * k + (ETA[[j]]$probIn)/nSums
                     }
                   }
                 }
