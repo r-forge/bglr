@@ -32,16 +32,12 @@ sla.gridInit(NPROWS=1, NPCOLS=1, BLOCKSIZE=16)
 }
 
 \examples{
-
 \dontrun{
-
 x = matrix(rnorm(128*128), 128, 128)
 sla.gridInit(NPROWS=2, NPCOLS=2)
 sla.solve(x, NPROWS=2, NPCOLS=2, RFLAG=FALSE, SPAWN=FALSE)->a
 sla.gridExit()
-
 }
-
 }
 \author{Nagiza Samatova (\email{samatovan@ornl.gov}), Guruprasad Kora (\email{koragh@ornl.gov}), Srikanth Yoginath (\email{yoginathsb@ornl.gov}), David Bauer (\email{bauerda@ornl.gov})}
 \concept{parallel}
