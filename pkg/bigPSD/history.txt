@@ -19,5 +19,26 @@ Added/modified:
         * util_plink.R added
 	* Kernel_utils.c added
 
-Deleted:
-	
+perl -ne 'print "$. $_" if m/[\x80-\xFF]/' RScaLAPACK.R 
+
+From pdbMPI-guide.pdf
+
+pbdMPI installs successfuly, but fails at initialization when calling the function init() with error message
+
+Error Message
+
+/usr/lib/R/bin/exec/R: symbol lookup error: /usr/lib/openmpi/lib/openmpi/mca_paffinity_linux.so: undefined
+symbol:
+mca_base_param_reg_int
+
+A: The linked library at installation may be different from the runtime library, especially when your system
+has more than one MPI systems. Since the library at installation is detected by autoconf 
+(configure) and automake (Makevars), it can be linked with OpenMPI library, but MPICH2 or LAM/MPI is 
+searched before OpenMPI according to $PATH.
+Solutions:
+
+Check which MPI system is your favorite to call. If you use OpenMPI, then you have to link with OpenMPI. Similarly, for MPICH2.
+Or, only kepp the MPI system you do like and drop others.
+Use --with-Rmpi-type to specify the MPI type.
+Use --with-Rmpi-include and --with-Rmpi-libpath to specify the right version	
+

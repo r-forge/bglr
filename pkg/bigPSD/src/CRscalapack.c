@@ -94,7 +94,7 @@ SEXP CR_Exec() {
 		char *cpNoParent = "No Parent found.  This program is not designed"
 		" to be run by itself.\nThis program is used by the R-ScaLAPACK"
 		" package as the computational engine.\n";
-		fprintf(stderr, cpNoParent);
+		//fprintf(stderr, cpNoParent);
 		return AsInt (3);
 	}
 

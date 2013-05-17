@@ -612,7 +612,7 @@ sla.gridInit <- function (NPROWS=1, NPCOLS=1, BLOCKSIZE=16) {
 		as.integer(1))
 
 	.RscalaGrid = list(NPROWS = NPROWS, NPCOLS = NPCOLS, BLOCKSIZE = BLOCKSIZE)
-	assign(".RscalaGrid", .RscalaGrid, env = .GlobalEnv);
+	assign(".RscalaGrid", .RscalaGrid, envir = .GlobalEnv);
 
 	x <- PA.exec("bigPSD", "pdgesv.R",inputVector)
 		print ("bigPSD:Process Grid Initialized " ) 
