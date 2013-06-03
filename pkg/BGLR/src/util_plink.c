@@ -478,7 +478,7 @@ void write_bed(char **bed_file, int *n, int *p, int *out)
 
         output=fopen(bed_file[0],"wb");
         
-        if(fopen!=NULL)
+        if(output!=NULL)
         {		
                 /*
                 Write the magic number
