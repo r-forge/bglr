@@ -1,7 +1,38 @@
+#Pretty basic support for formulas in BGLR
+set.X=function(LT)
+{	
+	flag=TRUE
+	n_elements=length(LT)
+	i=0
+	while(i<=n_elements & flag)
+	{
+	   i=i+1;
+	   if(class(LT[[i]])=="formula")
+	   {
+	   		flag=FALSE
+			rhs=LT[[i]]
+			if(is.null(LT$data))
+			{
+				mf = model.frame(formula=rhs)
+			}else{
+				mf = model.frame(formula=rhs,data=LT$data)
+			}
+    		X = model.matrix(attr(mf, "terms"), data=mf)
+    		Xint = match("(Intercept)", colnames(X), nomatch=0L)
+    		if(Xint > 0L) X = X[, -Xint, drop=FALSE]
+	   }
+	}
+	if(flag) stop("Unable to build incidence matrix, wrong formula or data\n")
+	return(X)
+}
+
+
 ## Fixed Effects ##################################################################
 setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
 {
-    # Checked, Gustavo, Nov. 4, 2012
+
+    if(is.null(LT$X)) LT$X=set.X(LT)
+
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 	
@@ -38,6 +69,8 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
 ## Gaussian Regression ############################################################
 setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
+
+    if(is.null(LT$X)) LT$X=set.X(LT)
        
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
@@ -100,7 +133,8 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 #Ridge regression using windows
 setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
-       
+    if(is.null(LT$X)) LT$X=set.X(LT)
+   
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 
@@ -191,6 +225,8 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 ## Bayesian LASSO ############################################################
 setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
+    if(is.null(LT$X)) LT$X=set.X(LT)
+
     LT$X=as.matrix(LT$X)
     LT$p=ncol(LT$X)
 		
@@ -395,13 +431,19 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     return(LT)
 }
 
-###Bayes B###########################################################################################################################################                    
+###Bayes B and C########################################################################################################################################                 
 
 #Pseudo BayesB 
 #See Variable selection for regression models, 
 #Lynn Kuo and Bani Mallic, 1998. 
-setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
-{ 
+#Bayes C (Habier et al., 2011)
+
+setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
+{
+
+  model=LT$model
+ 
+  if(is.null(LT$X)) LT$X=set.X(LT)
 
   #Be sure that your X is a matrix
   LT$X=as.matrix(LT$X) 
@@ -446,8 +488,7 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 
   if(is.null(LT$S0))
   {
-     if(LT$df0<2) stop("df0>2 in BayesB in order to set S0\n");
-
+     if(LT$df0<2) stop(paste("df0>2 in ",model," in order to set S0\n",sep=""));
      LT$S0=var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
      cat(paste(" Scale paramter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
   }
@@ -455,11 +496,16 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$b=rep(0, LT$p)
   LT$d=rbinom(n = LT$p, size = 1, prob = LT$probIn)
 
-  LT$varB = LT$varB=rep(LT$S0/(LT$df0-2),LT$p)
-   
-  LT$X=as.vector(LT$X)
+  if(model=="BayesB")
+  {
+  	LT$varB = LT$varB=rep(LT$S0/(LT$df0-2),LT$p)
+  	fname=paste(saveAt,"ETA_",j,"_varB.dat",sep="") 
+  }else{
+	LT$varB = LT$S0
+	fname=paste(saveAt,"ETA_",j,"_parBayesC.dat",sep="")
+  }
 
-  fname=paste(saveAt,"ETA_",j,"_varB.dat",sep="") 
+  LT$X=as.vector(LT$X)
 
   if(rmExistingFiles)
   { 
@@ -479,95 +525,14 @@ setLT.BayesB=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   return(LT) 
 }
 
-
-
-#Bayes C (Habier et al., 2011)
-setLT.BayesC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
-{ 
-
-  #Be sure that your X is a matrix
-  LT$X=as.matrix(LT$X) 
-  
-  LT$p=ncol(LT$X) 
-
-  LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
-  LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
-  sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
-
-  LT$MSx=sum(LT$x2)/n-sumMeanXSq
-
-  
-  if(any(is.na(LT$X))){ stop(paste("LP ",j," has NAs in X",sep=""))}
-  if(nrow(LT$X)!=n){stop(paste("   Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))}
-  
-  if(is.null(LT$R2))
-  {
-    LT$R2=R2/nLT
-    cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
-  }
-    
-  if(is.null(LT$df0))
-  {
-    LT$df0 = 5
-    cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
-  }
-
-  if(is.null(LT$probIn))
-  {
-    LT$probIn=0.5
-    cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
-  }
-  
-  if(is.null(LT$counts))
-  {
-    LT$counts=10
-    cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
-  }  
-  
-  LT$countsIn=LT$counts * LT$probIn
-  LT$countsOut=LT$counts - LT$countsIn
-  
-  if(is.null(LT$S0)){
-
-    if(LT$df0<2) stop("df0>2 in BayesC in order to set S0\n")
-
-    LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0-2)/LT$probIn
-    cat(paste("  Scale parameter in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
-  }
-    
-  LT$b=rep(0, LT$p)
-  LT$d=rbinom(n = LT$p, size = 1, prob = LT$probIn)
-
-  LT$varB = LT$S0
-   
-  LT$X=as.vector(LT$X)
-
-  fname=paste(saveAt,"ETA_",j,"_parBayesC.dat",sep="") 
-
-  if(rmExistingFiles)
-  { 
-    unlink(fname) 
-  }
-
-  LT$fileOut=file(description=fname,open="w")
-   
-  LT$post_varB=0
-  LT$post_varB2=0
-  LT$post_d=0
-  LT$post_probIn=0
-  LT$post_b=rep(0,LT$p)
-  LT$post_b2=rep(0,LT$p)
-  
-  #return object
-  return(LT)
-}
-
 #Bayes A, Mewissen et al. (2001).
 #Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps
 #Genetics 157: 1819-1829
 
 setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
-{  
+{ 
+  if(is.null(LT$X)) LT$X=set.X(LT)
+ 
   LT$X=as.matrix(LT$X)
   LT$p=ncol(LT$X)
   
@@ -978,9 +943,9 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                               BRR = setLT.BRR(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BL = setLT.BL(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               RKHS = setLT.RKHS(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
-                              BayesC = setLT.BayesC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
+                              BayesC = setLT.BayesBandC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
                               BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
-                              BayesB = setLT.BayesB(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
+                              BayesB = setLT.BayesBandC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
                               BRR_windows = setLT.BRR_windows(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
                               )
         }
@@ -1117,39 +1082,6 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   ETA[[j]]$varU = SS/rchisq(n = 1, df = DF)
                 }#END RKHS
 
-                ## Bayes C ################################################################################
-                if (ETA[[j]]$model == "BayesC") {
-                  #Update marker effects
-                  mrkIn = ETA[[j]]$d == 1
-                  pIn = sum(mrkIn)
-                  if (pIn > 0) {
-                    x = .Call("extract_column", which(mrkIn), n, ETA[[j]]$X)
-
-                    ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn], 
-                                               e, rep(ETA[[j]]$varB, pIn), varE, minAbsBeta, ncores)
-                    ETA[[j]]$b[mrkIn] = ans[[1]]
-                    e = ans[[2]]
-                  }
-
-                  if ((ETA[[j]]$p - pIn) > 0) {
-                    ETA[[j]]$b[(!mrkIn)] = rnorm(n = (ETA[[j]]$p - pIn), sd = sqrt(ETA[[j]]$varB))
-                  }
-
-                  #Update indicator variables #?# discuss this ##
-                  ans = .Call("d_e", ETA[[j]]$p, n, ETA[[j]]$X, ETA[[j]]$d, ETA[[j]]$b, e, varE, ETA[[j]]$probIn, ncores)
-
-                  ETA[[j]]$d = ans[[1]]
-                  e = ans[[2]]
-
-                  #Update the variance of marker effects
-                  SS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0
-                  DF = ETA[[j]]$df0 + ETA[[j]]$p
-                  ETA[[j]]$varB = SS/rchisq(df = DF, n = 1)
-                  mrkIn = sum(ETA[[j]]$d)
-                  ETA[[j]]$probIn = rbeta(shape1 = (mrkIn + ETA[[j]]$countsIn + 1), 
-                                          shape2 = (ETA[[j]]$p - mrkIn + ETA[[j]]$countsOut + 1), n = 1)
-                }#End BayesC
-
                 ## BayesA ##############################################################################
                 if (ETA[[j]]$model == "BayesA") {
                   varBj = ETA[[j]]$varB
@@ -1163,43 +1095,62 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                   DF = ETA[[j]]$df0 + 1
                   ETA[[j]]$varB = SS/rchisq(n = ETA[[j]]$p, df = DF)
                 }#End BayesA
-                
-                #BayesB
-                if(ETA[[j]]$model=="BayesB")
-                {
-                      #Update marker effects
-                      mrkIn=ETA[[j]]$d==1
-                      pIn=sum(mrkIn)
-                      if(pIn>0)
-                      {
-                        x=.Call("extract_column",which(mrkIn),n, ETA[[j]]$X)
 
-                        ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn],
-                                       e, ETA[[j]]$varB, varE, minAbsBeta,ncores)
-                        ETA[[j]]$b[mrkIn] = ans[[1]]
+		#BayesB and BayesC
+		if(ETA[[j]]$model %in% c("BayesB","BayesC"))
+		{
+			#Update marker effects
+                      	mrkIn=ETA[[j]]$d==1
+                      	pIn=sum(mrkIn)
+			
+			if(pIn>0)
+			{
+				x=.Call("extract_column",which(mrkIn),n, ETA[[j]]$X)
+				
+				if(ETA[[j]]$model=="BayesB")
+				{
+					ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn],
+                                        	     e, ETA[[j]]$varB[mrkIn], varE, minAbsBeta,ncores)
+				}else{
+ 					ans = .Call("sample_beta", n, pIn, x, ETA[[j]]$x2[mrkIn], ETA[[j]]$b[mrkIn], 
+                                               	     e, rep(ETA[[j]]$varB, pIn), varE, minAbsBeta, ncores)
+				}
+
+			}
+			
+			ETA[[j]]$b[mrkIn] = ans[[1]]
                         e = ans[[2]]
-                      }
 
-                      if((ETA[[j]]$p-pIn)>0)
-                      {
-                          ETA[[j]]$b[(!mrkIn)]=rnorm(n=(ETA[[j]]$p-pIn),sd=sqrt(ETA[[j]]$varB))
-                      }
+			if ((ETA[[j]]$p - pIn) > 0) 
+			{
+                    		if(ETA[[j]]$model=="BayesB")
+				{
+					ETA[[j]]$b[(!mrkIn)]=rnorm(n=(ETA[[j]]$p-pIn),sd=sqrt(ETA[[j]]$varB[!mrkIn]))					
+				}else{
+					ETA[[j]]$b[(!mrkIn)] = rnorm(n = (ETA[[j]]$p - pIn), sd = sqrt(ETA[[j]]$varB))
+				}
+                  	}
+			
+			#Update indicator variables
+                      	ans=.Call("d_e",ETA[[j]]$p,n,ETA[[j]]$X,ETA[[j]]$d,ETA[[j]]$b,e,varE,ETA[[j]]$probIn,ncores)
+                      	ETA[[j]]$d=ans[[1]]
+                      	e=ans[[2]]
 
-                      #Update indicator variables
-                      ans=.Call("d_e",ETA[[j]]$p,n,ETA[[j]]$X,ETA[[j]]$d,ETA[[j]]$b,e,varE,ETA[[j]]$probIn,ncores)
-                      ETA[[j]]$d=ans[[1]]
-                      e=ans[[2]]
-
-                      #Update the variance component associated with the markers
-                      SS = ETA[[j]]$b^2 + ETA[[j]]$S0
-                      DF = ETA[[j]]$df0+1
-                      ETA[[j]]$varB = SS/rchisq(df=DF, n = ETA[[j]]$p)
-                      mrkIn = sum(ETA[[j]]$d)
-                      ETA[[j]]$probIn = rbeta(shape1 = (mrkIn + ETA[[j]]$countsIn + 1),
-                                              shape2 = (ETA[[j]]$p - mrkIn + ETA[[j]]$countsOut + 1), n = 1)
-
-                }#End Bayes B
-
+			#Update the variance component associated with the markers
+			if(ETA[[j]]$model=="BayesB")
+			{
+				SS = ETA[[j]]$b^2 + ETA[[j]]$S0
+                      		DF = ETA[[j]]$df0+1
+                      		ETA[[j]]$varB = SS/rchisq(df=DF, n = ETA[[j]]$p)
+			}else{
+				SS = sum(ETA[[j]]$b^2) + ETA[[j]]$S0
+				DF = ETA[[j]]$df0 + ETA[[j]]$p
+                  		ETA[[j]]$varB = SS/rchisq(df = DF, n = 1)
+			}
+                      	mrkIn = sum(ETA[[j]]$d)
+                      	ETA[[j]]$probIn = rbeta(shape1 = (mrkIn + ETA[[j]]$countsIn + 1),
+                                                shape2 = (ETA[[j]]$p - mrkIn + ETA[[j]]$countsOut + 1), n = 1)
+		}
             }#Loop for
         }#nLT
         
