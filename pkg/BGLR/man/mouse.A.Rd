@@ -3,7 +3,7 @@
 \title{Pedigree info for the mouse dataset}
 \description{
 
-Is a numerator relationship matrix (1825 x 1825) computed
+Is a numerator relationship matrix (1814 x 1814) computed
 from a pedigree that traced back many generations.
 
 }

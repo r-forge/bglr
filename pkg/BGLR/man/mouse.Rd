@@ -5,7 +5,7 @@
 
 The mice data comes from an experiment carried out to detect and locate QTLs for complex traits in a 
 mice population (Valdar et al. 2006a; 2006b). This data has already been analyzed for comparing genome-assisted 
-genetic evaluation methods (Legarra et al. 2008). The data file consists of 1825 individuals,  
+genetic evaluation methods (Legarra et al. 2008). The data file consists of 1814 individuals,  
 each genotyped for 10,346 polymorphic markers. The trait here 
 here is body mass index (BMI), and additional information about body weight, season, month and day.
 
