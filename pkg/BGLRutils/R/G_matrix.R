@@ -14,7 +14,7 @@ read_sub_matrix=function(n,p,from_column,to_column,file,centers,weights,center_i
                 as.integer(p),
                 as.integer(from_column),
                 as.integer(to_column),
-                as.character(file),
+                as.character(normalizePath(file)),
                 as.double(centers),
                 as.double(weights),
                 as.integer(center_internally),
@@ -24,10 +24,20 @@ read_sub_matrix=function(n,p,from_column,to_column,file,centers,weights,center_i
                 return(out);
 }
 
-G_matrix=function(n,p,n_submatrix,file,centers,weights,center_internally=0,standard_internally=0,NPROWS=0, NPCOLS=0, MB=16, RFLAG=1, SPAWN=1)
+G_matrix=function(n,p,n_submatrix,file,centers=NULL,weights=NULL,center_internally=1,standard_internally=1)
 {
    to_column=0;
    delta=as.integer(p/n_submatrix);
+
+   if(is.null(centers))
+   {
+     centers=rep(0,p)
+   }
+
+   if(is.null(weights))
+   {
+     weights=rep(1,p)
+   }
 
    G=matrix(0,nrow=n,ncol=n)
 
@@ -46,3 +56,5 @@ G_matrix=function(n,p,n_submatrix,file,centers,weights,center_internally=0,stand
    }
    return(G)
 }
+
+

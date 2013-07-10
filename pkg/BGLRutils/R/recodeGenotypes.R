@@ -1,8 +1,7 @@
 recodeGenotypes<-function(dataBase,naCode=9){
 
   MAP<-read.table(paste(dataBase,'binary/map.txt',sep=''),header=TRUE,stringsAsFactors=FALSE)  
-  
-  
+    
   alleleOne<-matrix(unlist(strsplit(MAP$alleles,split='/')),byrow=TRUE,ncol=2)[,1]
   p<-length(alleleOne)
   IDs<-scan(paste(dataBase,'/binary/IDs.txt',sep=''),what=character(),quiet=TRUE)
@@ -14,8 +13,11 @@ recodeGenotypes<-function(dataBase,naCode=9){
  
   naCounts<-rep(0,p)
   alleleCounts<-rep(0,p)
-  
-  for(i in 1:n){
+
+
+  cat("\n################################################## 100%% \n");
+  for(i in 1:n)
+  {
         x<-readBinGenText(filename=fileIn,whichGenotype=i,p=p)
         x<-matrix(byrow=TRUE,ncol=2,data=unlist(strsplit(x,split='')))
         isNa<-(x[,1]=='N'|x[,1]=='R'|x[,1]=='Y'|
@@ -30,16 +32,23 @@ recodeGenotypes<-function(dataBase,naCode=9){
   	    naCounts<-naCounts+as.integer(tmp==9)
 
         alleleCounts<-alleleCounts+ifelse(tmp==9,0,tmp)
-		
-        cat(i,"/",n,"\n")
-  }
+
+        progress1<-as.integer(i/n*100);
+        progress2<-as.integer((i+1)/n*100)
+        if(progress1%%2==0)
+        {
+	   if(progress2%%2!=0) cat("#");
+        }
+   }
+
+   cat("\n")
+
    freqNAs<-naCounts/n
    freqAlleleOne<-alleleCounts/2/(n-naCounts)
    
    MAP$freqNAs<-freqNAs
    MAP$freqAleleOne<-freqAlleleOne
-   write.table(MAP,file=paste(dataBase,'binary/map.txt',sep=''),col.names=TRUE,row.names=FALSE)
-   
+   write.table(MAP,file=paste(dataBase,'binary/map.txt',sep=''),col.names=TRUE,row.names=FALSE) 
 }
 
 ## allele codes
