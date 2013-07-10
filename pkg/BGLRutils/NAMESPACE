@@ -1,0 +1,2 @@
+useDynLib(BGLRutils)
+export(addBinGenotypes,G_matrix,recodeGenotypes,getGenos)
