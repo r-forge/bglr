@@ -1,35 +1,89 @@
 #include<R.h>
 #include<stdio.h>
 #include<stdlib.h>
-#include<string.h>
+
+/*
+  This function reads an arbitrary long line from a text file
+  dynamically allocating memory for the buffer.
+  Arguments: 
+  fp: pointer to file
+  nchar: number of characters that the function was able to read. If this number is negative that means that
+         EOF (end of file). If nchar=0 then is a white line, if nchar>0 then this corresponds to a non empty line.
+*/
+
+#define BUF_SIZE 1000
+
+
+char * read_string(FILE *fp, int *nchar)
+{
+        char *buffer=NULL;
+        char c;
+        int count=0;
+        int buf_size=BUF_SIZE;
+        int flag=1;
+
+        buffer = (char *) malloc(buf_size);
+
+        if(buffer!=NULL)
+        {
+            while (!feof(fp) && flag )
+            {
+                c = fgetc(fp);
+                if(count==buf_size)
+                {
+                     buf_size *=2;
+                     char *tmp = (char *) realloc(buffer, buf_size);
+                     if(!buffer)
+                     {
+                        free(buffer);
+                        error("cannot allocate buffer in read_string");
+                     }else{
+                        buffer = tmp;
+                     }
+                }
+
+                if(c=='\n')
+                {
+                   buffer[count]='\0';
+                   flag=0;
+                }else{
+                   if(c!=EOF)
+                   {
+                     buffer[count]=c;           //FIXME: This is weird if I do not take this into account a strange symbol appears as an extra line
+                     count++;
+                   }
+                }
+            }
+        }else
+        {
+                error("Unable to allocate memory for buffer in read_string\n");
+        }
+        *nchar=count-1;
+        return(buffer);
+}
+
 
 void read_matrix(char **X, int rows, int columns, int skip_columns, char *Input_file)
 {
-    char *Buffer;
+    char *Line;
     char *token=NULL;
-    size_t nbytes=1000; 
+    int  nbytes; 
     FILE *ptr;
     int i,j,k; 
-
-    Buffer= (char *) malloc (nbytes + 1);
-   
-    if(Buffer==NULL)
-    {
-        error("Unable to allocate space for buffer\n");
-    }
     
     ptr=fopen(Input_file,"r");
     if(ptr!=NULL)
     {
     	i=0;
 	Rprintf("Loading GBS data...");
-       	while(getline(&Buffer, &nbytes, ptr)>0)
+       	while(!feof(ptr))
     	{
 	        //printf("Line=%d\n",i);
                 /*Skip the first line(s)*/
+                Line=read_string(ptr, &nbytes);
 	    	if(i>0)
 		{
-		  		token=strtok(Buffer,"\t");
+		  		token=strtok(Line,"\t");
 		  		j=0;
 		  		k=0;
 		  		while(token!=NULL)
