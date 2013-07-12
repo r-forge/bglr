@@ -65,13 +65,21 @@ in <a href="https://r-forge.r-project.org/R/?group_id=1525">https://r-forge.r-pr
 </br>
 
 <b>Software packages:</b>
+<br>BGLR</br>
                     <!-- PACKAGE TARBALL -->
-			<b><a href="BGLR_1.0.tar.gz"><img src="linux_30x30.gif" style="vertical-align:middle" title="linux" alt="linux">(.tar.gz)</a></b> | 
+		    <b><a href="BGLR_1.0.tar.gz"><img src="linux_30x30.gif" style="vertical-align:middle" title="linux" alt="linux">(.tar.gz)</a></b> | 
                     <!-- WINDOWS BINARY -->
 		    <b><a href="BGLR_1.0.zip"><img src="win_30x30.gif" style="vertical-align:middle" title="windows" alt="windows">(.zip)</a></b> |
                     <!-- MAC BINARY -->
-                    <b><a href="BGLR_1.0.tgz"><img src="osx_30x30.png" style="vertical-align:middle" title="macosx" alt="macosx">(.tgz)</a></b>  |	<B>Build status: <font style="color:green">Current</font></b></td></tr><tr><td>&nbsp;</td><td valign="center" align="right">
-		   
+                    <b><a href="BGLR_1.0.tgz"><img src="osx_30x30.png" style="vertical-align:middle" title="macosx" alt="macosx">(.tgz)</a></b>  |	<B>Build number: <font style="color:green">49</font></b></td></tr><tr><td>&nbsp;</td><td valign="center" align="right">
+<br>BGLRutils</br>
+ 		    <!-- PACKAGE TARBALL -->
+                    <b><a href="BGLRutils_0.1.tar.gz"><img src="linux_30x30.gif" style="vertical-align:middle" title="linux" alt="linux">(.tar.gz)</a></b> |
+                    <!-- WINDOWS BINARY -->
+                    <b><a href="BGLRutils_0.1.zip"><img src="win_30x30.gif" style="vertical-align:middle" title="windows" alt="windows">(.zip)</a></b> |
+                    <!-- MAC BINARY -->
+                    <b><a href="BGLRutils_0.1.tgz"><img src="osx_30x30.png" style="vertical-align:middle" title="macosx" alt="macosx">(.tgz)</a></b>  |      <B>Build number: <font style="color:green">52</font></b></td></tr><tr><td>&nbsp;</td><td valign="center" align="right">
+
 </p>
 
 <p>BGLR package manual <a HREF="BGLR-manual.pdf">Download</a></p>
