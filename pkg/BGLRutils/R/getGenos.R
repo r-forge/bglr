@@ -9,9 +9,10 @@ getGenos<-function(genDatabase,IDs=NULL,markerNames=NULL,minMAF=0,maxFreqNA=1,na
    }else{
       keepMarker<-MAP$rs%in%markerNames
    }
-   tmp<-(MAP$present>=(1-maxFreqNA))
+   tmp<-(MAP$freqNAs>=(1-maxFreqNA))
    keepMarker<-keepMarker&tmp
-   tmp<-MAP$MAF>=minMAF
+   MAF=ifelse(MAP$freqAleleOne>0.5,1-MAP$freqAleleOne,MAP$freqAleleOne)
+   tmp<-MAF>=minMAF
    keepMarker<-keepMarker&tmp
    whichMarkers<-which(keepMarker)
    

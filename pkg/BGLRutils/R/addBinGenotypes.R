@@ -34,9 +34,9 @@ addBinGenotypes<-function(fileIn,dataBase,nrow,ncol,skip)
     unlink(paste(dataBase,'binary/map2.txt',sep=''))
     if(all.equal(map1,map2)==TRUE)
     {
-	#Do nothing
+  	#Do nothing
     }else{
-	stop('Existing map does not match the map of the new data-file')
+  	stop('Existing map does not match the map of the new data-file')
     }
   }
 

@@ -81,7 +81,7 @@ void read_matrix(char **X, int rows, int columns, int skip_columns, char *Input_
 	        //printf("Line=%d\n",i);
                 /*Skip the first line(s)*/
                 Line=read_string(ptr, &nbytes);
-	    	if(i>0)
+	    	if(i>0 && nbytes>0)
 		{
 		  		token=strtok(Line,"\t");
 		  		j=0;
@@ -100,10 +100,11 @@ void read_matrix(char **X, int rows, int columns, int skip_columns, char *Input_
                 			j++;
 		  		}
 		}
-      		i++;
+      		if(nbytes>0) i++;
     	}
 
     	Rprintf("Done\n");
+        
         if(i!=rows)
         {
                  error("The file has MORE/LESS lines that those indicated by the user\n");
