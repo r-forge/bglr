@@ -92,7 +92,8 @@ SEXP extract_column(SEXP columns, SEXP rows, SEXP X)
 
 SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj, SEXP varE, SEXP minAbsBeta, SEXP ncores)
 {
-    double *xj, *pXL, *pxL2, *pbL, *pe, *pvarBj;
+    //double *xj;
+    double *pXL, *pxL2, *pbL, *pe, *pvarBj;
     double rhs,c,sigma2e, smallBeta;
     int j,i, rows, cols;
     int useCores, haveCores;
@@ -129,7 +130,7 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
     PROTECT(varBj=AS_NUMERIC(varBj));
     pvarBj=NUMERIC_POINTER(varBj);
 
-    xj=(double *) R_alloc(rows,sizeof(double));
+    //xj=(double *) R_alloc(rows,sizeof(double));
 
     for(j=0; j<cols;j++)
     {
@@ -139,9 +140,11 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
 	    #pragma omp for reduction(+:rhs) schedule(static)
 	    for(i=0; i<rows; i++)
 	    {
-	      xj[i]=pXL[i+j*rows];
-	      pe[i] = pe[i] + pbL[j]*xj[i];
-	      rhs+=xj[i]*pe[i];
+	      //xj[i]=pXL[i+j*rows];
+	      //pe[i] = pe[i] + pbL[j]*xj[i];
+              //rhs+=xj[i]*pe[i];
+               pe[i]=pe[i]+pbL[j]*pXL[i+j*rows];
+	       rhs+=pXL[i+j*rows]*pe[i];
 	    }
 	  }
 	  rhs=rhs/sigma2e;
@@ -151,7 +154,8 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
 	  #pragma omp for schedule(static)
 	  for(i=0; i<rows; i++)
 	  {
-	    pe[i] = pe[i] - pbL[j]*xj[i];
+	    //pe[i] = pe[i] - pbL[j]*xj[i];
+              pe[i] = pe[i] - pbL[j]*pXL[i+j*rows];
 	  }
           if(fabs(pbL[j])<smallBeta)
           {
@@ -173,6 +177,320 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
   	return(list);
 }
 
+
+/*
+ * This routine will be used to do updating of the coefficients in Bayes C-pi
+ * OpenMP version
+*/
+
+void swap(double *a, double *b)
+{
+    double temp;
+    temp = *b;
+    *b = *a;
+    *a = temp;
+}
+
+SEXP sample_beta2(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, SEXP varBj, SEXP varE, SEXP minAbsBeta, SEXP probInside,SEXP ncores)
+{
+  int i,j,rows,cols;
+  double sigma2e, probIn, sum1,sum2, logOdds, smallBeta,rhs,c,tmp;
+  double *pX, *perror, *pb, *eIn, *eOut, *pvarBj, *px2;
+  double logOddsPrior;
+  int *pd,change;
+  int useCores, haveCores;
+  SEXP list;
+  size_t sized;
+  
+  cols=INTEGER_VALUE(p);
+  rows=INTEGER_VALUE(n);
+  sigma2e=NUMERIC_VALUE(varE);
+  probIn=NUMERIC_VALUE(probInside);
+  smallBeta=NUMERIC_VALUE(minAbsBeta);
+  logOddsPrior=log(probIn/(1-probIn));
+    
+  PROTECT(X=AS_NUMERIC(X));
+  pX=NUMERIC_POINTER(X);
+
+  PROTECT(d=AS_INTEGER(d));
+  pd=INTEGER_POINTER(d);
+
+  PROTECT(b=AS_NUMERIC(b));
+  pb=NUMERIC_POINTER(b);
+  
+  PROTECT(error=AS_NUMERIC(error));
+  perror=NUMERIC_POINTER(error);
+  
+  eOut=(double *) R_alloc(rows,sizeof(double));
+  eIn=(double *) R_alloc(rows,sizeof(double));
+
+  PROTECT(varBj=AS_NUMERIC(varBj));
+  pvarBj=NUMERIC_POINTER(varBj);
+   
+  PROTECT(x2=AS_NUMERIC(x2));
+  px2=NUMERIC_POINTER(x2);
+
+  sized=sizeof(double);
+ 
+  #ifdef SUPPORT_OPENMP
+          //R_CStackLimit=(uintptr_t)-1;
+          useCores=INTEGER_VALUE(ncores);
+          haveCores=omp_get_num_procs();
+          if(useCores<=0 || useCores>haveCores) useCores=haveCores;
+          omp_set_num_threads(useCores);
+  #endif
+ 
+  GetRNGstate();
+
+  for(j=0; j<cols; j++)
+  { 
+     sum1=0;
+     sum2=0;
+     //Rprintf("%d\n",pd[j]);
+     if(pd[j])
+     {
+       memcpy(eIn,perror,rows*sized);
+       #pragma omp for schedule(static)
+       for(i=0; i<rows;i++)
+       {
+	 eOut[i]=perror[i] + pX[i+j*rows] * pb[j];
+         sum1+=eIn[i]*eIn[i];
+         sum2+=eOut[i]*eOut[i];
+       }
+     }else{
+        memcpy(eOut,perror,rows*sized);
+        #pragma omp for schedule(static)
+        for(i=0; i<rows;i++)
+	{
+	  eIn[i]=perror[i] - pX[i+j*rows] * pb[j];
+          sum1+=eIn[i]*eIn[i];
+          sum2+=eOut[i]*eOut[i];
+	}
+     }
+
+     logOdds=logOddsPrior+0.5/sigma2e*(sum2-sum1);
+     tmp=1.0/(1.0+exp(-logOdds));
+
+     change=pd[j];
+
+     pd[j]=unif_rand()<tmp ? 1 : 0;
+
+     //Update residual
+     if(change!=pd[j])
+     {
+
+        if(pd[j])
+        {
+                #pragma omp for schedule(static)
+                for(i=0; i<rows;i++)
+                {
+                        perror[i]=eOut[i] - pX[i+j*rows] * pb[j];
+                }
+        }else{
+                memcpy(perror,eOut,rows*sized);
+        }
+     }
+
+     //Sampling coefficients
+     if(pd[j]==0)
+     {
+           //Sampling from the prior
+           pb[j]=sqrt(pvarBj[j])*norm_rand();
+     }else{
+	   //Sampling from the conditional
+	   rhs=0;
+           #pragma omp parallel 
+           {
+             #pragma omp for reduction(+:rhs) schedule(static)
+             for(i=0; i<rows; i++)
+             {
+               perror[i] = perror[i] + pb[j]*pX[i+j*rows];
+               rhs+=pX[i+j*rows]*perror[i];
+             }
+           }
+           rhs=rhs/sigma2e;
+           c=px2[j]/sigma2e + 1.0/pvarBj[j];
+           pb[j]=rhs/c + sqrt(1.0/c)*norm_rand();
+
+           #pragma omp for schedule(static)
+           for(i=0; i<rows; i++)
+           {
+             perror[i] = perror[i] - pb[j]*pX[i+j*rows];
+           }
+     }
+  }
+  
+  // Creating a list with 2 vector elements
+  PROTECT(list = allocVector(VECSXP,3));
+
+  // attaching b vector to list
+  SET_VECTOR_ELT(list, 0,d);
+
+  
+  // attaching error vector to list
+  SET_VECTOR_ELT(list, 1, error);
+
+  // attaching b to the list
+  SET_VECTOR_ELT(list,2,b);
+
+
+  PutRNGstate();
+
+  UNPROTECT(7);
+
+  return(list);  
+}
+
+/*
+  Gustavo's proposal
+*/
+
+double sum_squares(double *x, int n)
+{
+   double s=0;
+   int i;
+   for(i=0; i<n;i++) s+=x[i]*x[i];
+   return(s);
+}
+
+SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, SEXP varBj, SEXP varE, SEXP minAbsBeta, SEXP probInside,SEXP ncores)
+{
+  int i,j,rows,cols;
+  double sigma2e, probIn, logOdds,tmp;
+  double logOddsPrior;
+  double rhs,c;
+  double RSS, Xe, RSS_in, RSS_out;
+  double *pX, *perror, *pb, *px2,*pvarBj;
+  int *pd;
+  int useCores, haveCores;
+  int change;
+  SEXP list;
+
+  cols=INTEGER_VALUE(p);
+  rows=INTEGER_VALUE(n);
+  sigma2e=NUMERIC_VALUE(varE);
+  probIn=NUMERIC_VALUE(probInside);
+  logOddsPrior=log(probIn/(1-probIn));
+
+  PROTECT(X=AS_NUMERIC(X));
+  pX=NUMERIC_POINTER(X);
+
+  PROTECT(x2=AS_NUMERIC(x2));
+  px2=NUMERIC_POINTER(x2);
+
+
+  PROTECT(d=AS_INTEGER(d));
+  pd=INTEGER_POINTER(d);
+
+  PROTECT(b=AS_NUMERIC(b));
+  pb=NUMERIC_POINTER(b);
+
+  PROTECT(error=AS_NUMERIC(error));
+  perror=NUMERIC_POINTER(error);
+
+  PROTECT(varBj=AS_NUMERIC(varBj));
+  pvarBj=NUMERIC_POINTER(varBj);
+
+  #ifdef SUPPORT_OPENMP
+          //R_CStackLimit=(uintptr_t)-1;
+          useCores=INTEGER_VALUE(ncores);
+          haveCores=omp_get_num_procs();
+          if(useCores<=0 || useCores>haveCores) useCores=haveCores;
+          omp_set_num_threads(useCores);
+  #endif
+
+  GetRNGstate();
+
+  RSS=sum_squares(perror,rows);
+
+  for(j=0; j<cols; j++)
+  {
+     //Just Extracting a column
+     Xe=0;
+     for(i=0; i<rows; i++)
+     {
+         Xe+=perror[i]*pX[i+j*rows];
+     }
+
+     if(pd[j])
+     {
+        RSS_in=RSS;
+        RSS_out = RSS_in +  pb[j]*pb[j]*px2[j] + 2*pb[j]*Xe;
+     }else{
+        RSS_out=RSS;
+        RSS_in = RSS_out - pb[j]*pb[j]*px2[j] - 2*pb[j]*Xe;
+     }
+
+     logOdds=logOddsPrior+0.5/sigma2e*(RSS_out-RSS_in);
+     tmp=1.0/(1.0+exp(-logOdds));
+
+     change=pd[j];
+
+     pd[j]=unif_rand()<tmp ? 1 : 0;
+
+     //Update residuals
+     if(change!=pd[j])
+     {
+        if(pd[j]>change)
+        {
+                Xe=0;
+                for(i=0; i<rows;i++)
+                {
+                        perror[i]=perror[i] - pX[i+j*rows] * pb[j];
+                        Xe+=perror[i]*pX[i+j*rows];   
+                }
+        }else{
+                for(i=0; i<rows;i++)
+                {
+                        perror[i]=perror[i] + pX[i+j*rows] * pb[j];
+                }
+        }
+        RSS=sum_squares(perror,rows);
+     }
+
+     //Sample the coefficients
+     if(pd[j]==0)
+     {
+        //Sample from the prior
+        pb[j]=sqrt(pvarBj[j])*norm_rand();
+     }else{
+
+	   //Sampling from the conditional
+           rhs=(px2[j]*pb[j] + Xe)/sigma2e;
+           c=px2[j]/sigma2e + 1.0/pvarBj[j];
+           tmp=rhs/c + sqrt(1.0/c)*norm_rand();
+
+           #pragma omp for schedule(static)
+           for(i=0; i<rows; i++)
+           {
+             perror[i] = perror[i]+(pb[j]-tmp)*pX[i+j*rows];
+           }
+           RSS=sum_squares(perror,rows);
+           pb[j]=tmp;
+     }
+
+  }
+
+  // Creating a list with 3 vector elements
+  PROTECT(list = allocVector(VECSXP,3));
+
+  // attaching b vector to list
+  SET_VECTOR_ELT(list, 0,d);
+
+  // attaching error vector to list
+  SET_VECTOR_ELT(list, 1, error);
+
+  // attaching b to the list
+  SET_VECTOR_ELT(list,2,b);
+
+  PutRNGstate();
+
+  UNPROTECT(7);
+
+  return(list);
+
+}
+
 /*
  * This routine will be used to do updating of the coefficients in Bayes C-pi
  * OpenMP version
@@ -184,7 +502,8 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
   double sigma2e, probIn, sum1,sum2, logOdds,tmp;
   //double logProbIn, logProbOut;
   double *pX, *perror, *pb, *eIn, *eOut;
-  int *pd;
+  double logOddsPrior;
+  int *pd,change;
   int useCores, haveCores;
   SEXP list;
   
@@ -192,6 +511,7 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
   rows=INTEGER_VALUE(n);
   sigma2e=NUMERIC_VALUE(varE);
   probIn=NUMERIC_VALUE(probInside);
+  logOddsPrior=log(probIn/(1-probIn));
     
   PROTECT(X=AS_NUMERIC(X));
   pX=NUMERIC_POINTER(X);
@@ -220,19 +540,21 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
   for(j=0; j<cols; j++)
   { 
      //Rprintf("%d\n",pd[j]);
-     if(pd[j]==1)
+     if(pd[j])
      {
+       memcpy(eIn,perror,rows*sizeof(double));
        #pragma omp for schedule(static)
        for(i=0; i<rows;i++)
        {
-         eIn[i]=perror[i];
+         //eIn[i]=perror[i];
 	 eOut[i]=perror[i] + pX[i+j*rows] * pb[j];
        }
      }else{
+        memcpy(eOut,perror,rows*sizeof(double));
         #pragma omp for schedule(static)
         for(i=0; i<rows;i++)
 	{
-	  eOut[i]=perror[i];
+	  //eOut[i]=perror[i];
 	  eIn[i]=perror[i] - pX[i+j*rows] * pb[j];
 	}
      }
@@ -255,24 +577,29 @@ SEXP d_e(SEXP p, SEXP n, SEXP X, SEXP d, SEXP b, SEXP error, SEXP varE, SEXP pro
      //logProbOut =log(1 - probIn)+sum2;
      //logOdds = logProbIn - logProbOut;
 
-     logOdds=log(probIn/(1-probIn))+0.5/sigma2e*(sum2-sum1);
+     logOdds=logOddsPrior+0.5/sigma2e*(sum2-sum1);
      tmp=exp(logOdds)/(1 + exp(logOdds));
 
-     if(unif_rand()<tmp)
-     {
-         pd[j]=1;
-     }else
-     {
-         pd[j]=0;
-     }
-     
+     change=pd[j];
+
+     pd[j]=unif_rand()<tmp ? 1 : 0;
+
      //Update error
-     #pragma omp for schedule(static)
-     for(i=0; i<rows;i++)
+     if(change!=pd[j])
      {
-         perror[i]=eOut[i] - pX[i+j*rows] * pb[j] * pd[j];
+
+        if(pd[j])
+        {
+                #pragma omp for schedule(static)
+                for(i=0; i<rows;i++)
+                {
+                        perror[i]=eOut[i] - pX[i+j*rows] * pb[j];
+                }
+        }else{
+                memcpy(perror,eOut,rows*sizeof(double));
+        }
      }
-     
+    
   }
   
   // Creating a list with 2 vector elements

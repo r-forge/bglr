@@ -3,7 +3,6 @@
 #Albert, J., Chib, S. (1993). Bayesian Analysis of Binary and Polychotomus Response Data.
 #JASA, 88, 669-679.
 
-
 rm(list=ls())
 setwd(tempdir())
 
@@ -20,12 +19,14 @@ thin=10;
 saveAt='';
 ETA=list(list(X=X,model='FIXED'))
 
-fit_Bernoulli_BGLR=BGLR(y=y,response_type='Bernoulli',ETA=ETA,nIter=nIter,burnIn=burnIn,
+fit_Bernoulli_BGLR=BGLR(y=y,response_type='ordinal',ETA=ETA,nIter=nIter,burnIn=burnIn,
                    thin=thin,saveAt=saveAt)
-fit_Bernoulli_BGLR$mu
-fit_Bernoulli_BGLR$SD.mu
 fit_Bernoulli_BGLR$ETA[[1]]$b
 fit_Bernoulli_BGLR$ETA[[1]]$SD.b
+
+#In our parameterization, mu is set to 0 and it is estimated as a threshold
+-fit_Bernoulli_BGLR$threshold
+fit_Bernoulli_BGLR$SD.threshold 
 
 fit_mle=glm(y~v+r,family=binomial(link="probit")) 
 summary(fit_mle)
@@ -59,9 +60,9 @@ nIter=5000;
 burnIn=2500;
 thin=10;
 saveAt='';
-ETA=list(list(X=wheat.X,model='FIXED'))
+ETA=list(list(X=wheat.X,model='BRR'))
 
-fit_Bernoulli_BGLR=BGLR(y=yNA,response_type='Bernoulli',ETA=ETA,nIter=nIter,burnIn=burnIn,
+fit_Bernoulli_BGLR=BGLR(y=yNA,response_type='ordinal',ETA=ETA,nIter=nIter,burnIn=burnIn,
                    thin=thin,saveAt=saveAt)
 
 mean((yBin[tst]-pnorm(fit_Bernoulli_BGLR$yHat[tst]))^2) # mean-sq. error
