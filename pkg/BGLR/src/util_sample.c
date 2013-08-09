@@ -431,6 +431,7 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
      //Update residuals
      if(change!=pd[j])
      {
+	RSS=0;
         if(pd[j]>change)
         {
                 Xe=0;
@@ -438,14 +439,15 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
                 {
                         perror[i]=perror[i] - pX[i+j*rows] * pb[j];
                         Xe+=perror[i]*pX[i+j*rows];   
+                        RSS+=perror[i]*perror[i];
                 }
         }else{
                 for(i=0; i<rows;i++)
                 {
                         perror[i]=perror[i] + pX[i+j*rows] * pb[j];
+                        RSS+=perror[i]*perror[i];
                 }
         }
-        RSS=sum_squares(perror,rows);
      }
 
      //Sample the coefficients
@@ -454,8 +456,8 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
         //Sample from the prior
         pb[j]=sqrt(pvarBj[j])*norm_rand();
      }else{
-
 	   //Sampling from the conditional
+           RSS=0;
            rhs=(px2[j]*pb[j] + Xe)/sigma2e;
            c=px2[j]/sigma2e + 1.0/pvarBj[j];
            tmp=rhs/c + sqrt(1.0/c)*norm_rand();
@@ -464,8 +466,8 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
            for(i=0; i<rows; i++)
            {
              perror[i] = perror[i]+(pb[j]-tmp)*pX[i+j*rows];
+             RSS+=perror[i]*perror[i];
            }
-           RSS=sum_squares(perror,rows);
            pb[j]=tmp;
      }
 
