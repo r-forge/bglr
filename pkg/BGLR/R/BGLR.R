@@ -1,4 +1,3 @@
-##Pretty basic support for formulas in BGLR
 set.X=function(LT)
 {	
 	flag=TRUE
@@ -694,7 +693,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0 (2013-05-17)"
+  BGLR.version = "1.0 (2013-08-09)"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -724,49 +723,6 @@ rtrun=function (mu, sigma, a, b)
 #Extract the values of z such that y[i]=j
 #z,y vectors, j integer
 extract=function(z,y,j) subset(as.data.frame(z,y),subset=(y==j))
-
-#Random number from inverse gaussian distribution
-#Taken from SuppDists package, version 1.1-8, by Bob Wheeler <bwheelerg@gmail.com>
-#arguments:
-#n is sample size
-#nu vector real and non-negative parameter -- the Wald distribution results when nu=1
-#lambda vector real and non-negative parameter
-#
-#Density function
-#f(x,nu,lambda)=sqrt[lambda/(2 pi x^3)]exp[-lambda(x-nu)^2/(2 x nu^2)]
-
-#rinvGauss=function (n, nu, lambda)
-#{
-#    n =if (length(n) > 1)
-#        length(n)
-#    else n
-#    N = max(length(nu), length(lambda))
-#    nu = rep(nu, length.out = N)
-#    lambda = rep(lambda, length.out = N)
-#    .C("rinvGaussR", as.double(nu), as.double(lambda), as.integer(n), as.integer(N), value = double(n))$value
-#}
-
-
-#This routine was take from VGAM
-#rinvGauss =function(n, nu, lambda) 
-#{
-#   use.n=if (length(n) > 1)
-#          length(n)
-#   else n
-#
-#   nu = rep(nu, len = use.n); 
-#   lambda = rep(lambda, len = use.n)
-#
-#   u = runif(use.n)
-#   Z = rnorm(use.n)^2 # rchisq(use.n, df = 1)
-#   phi = lambda / nu
-#   y1 = 1 - 0.5 * (sqrt(Z^2 + 4*phi*Z) - Z) / phi
-#   ans <- nu * ifelse((1+y1)*u > 1, 1/y1, y1)
-#   ans[nu     <= 0] = NaN
-#   ans[lambda <= 0] = NaN
-#   ans
-#}
-
 
 #This routine was adapted from rinvGauss function from S-Plus
 # Random variates from inverse Gaussian distribution
@@ -819,8 +775,6 @@ loglik_ordinal=function(y,yHat,threshold)
 #dfe: Degrees of freedom for the prior for varE
 #weights: 
 #R2
-#ncores: number of cores used in computations. If ncores=1 then it will 
-#        use OpenMP to perform the computations in UNIX like systems.
 #Note: The function was designed to work with gaussian responses, some changes were made to deal binary and ordinal responses
 
 
@@ -844,7 +798,7 @@ loglik_ordinal=function(y,yHat,threshold)
 BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL, 
     ETA = NULL, nIter = 1500, burnIn = 500, thin = 5, saveAt = "", 
     S0 = NULL, df0 = 5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL, 
-    ncores = 1, verbose = TRUE, rmExistingFiles = TRUE) 
+    verbose = TRUE, rmExistingFiles = TRUE) 
 {
     welcome()
     IDs=names(y)
@@ -1008,7 +962,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "FIXED") {
                   varBj = rep(ETA[[j]]$varB, ETA[[j]]$p)
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta, ncores)
+                                             e, varBj, varE, minAbsBeta)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
                 }#End of fixed effects
@@ -1017,7 +971,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "BRR") {
                   varBj = rep(ETA[[j]]$varB, ETA[[j]]$p)
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta, ncores)
+                                             e, varBj, varE, minAbsBeta)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
 
@@ -1028,7 +982,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 
                 if(ETA[[j]]$model=="BRR_windows"){
                    ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b,
-                                             e, ETA[[j]]$varB, varE, minAbsBeta, ncores)
+                                             e, ETA[[j]]$varB, varE, minAbsBeta)
 		   ETA[[j]]$b = ans[[1]]
                    e = ans[[2]]
 
@@ -1048,7 +1002,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "BL") {
                   varBj = ETA[[j]]$tau2 * varE
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta, ncores)
+                                             e, varBj, varE, minAbsBeta)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
 
@@ -1118,7 +1072,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "BayesA") {
                   varBj = ETA[[j]]$varB
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta, ncores)
+                                             e, varBj, varE, minAbsBeta)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
                    
@@ -1142,9 +1096,9 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 		        
                         if(ETA[[j]]$model=="BayesB")
                         {
-                          ans=.Call("sample_beta2",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, ETA[[j]]$varB, varE, minAbsBeta, ETA[[j]]$probIn, ncores);
+                          ans=.Call("sample_beta3",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, ETA[[j]]$varB, varE, minAbsBeta, ETA[[j]]$probIn);
                         }else{
-                          ans=.Call("sample_beta2",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, rep(ETA[[j]]$varB,ETA[[j]]$p), varE, minAbsBeta, ETA[[j]]$probIn, ncores);
+                          ans=.Call("sample_beta3",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, rep(ETA[[j]]$varB,ETA[[j]]$p), varE, minAbsBeta, ETA[[j]]$probIn);
                         }
 
                         ETA[[j]]$d=ans[[1]]
@@ -1412,7 +1366,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
     out = list(y = y0, whichNa = whichNa, saveAt = saveAt, nIter = nIter, 
                burnIn = burnIn, thin = thin, minAbsBeta = minAbsBeta, 
-               weights = weights, ncores = ncores, verbose = verbose, 
+               weights = weights, verbose = verbose, 
                response_type = response_type, df0 = df0, S0 = S0)
 
     out$yHat = post_yHat
@@ -1534,8 +1488,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
 BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL, 
     A = NULL), prior = NULL, nIter = 1100, burnIn = 100, thin = 10, 
-    thin2 = 1e+10, saveAt = "", minAbsBeta = 1e-09, weights = NULL, 
-    ncores = 1) 
+    thin2 = 1e+10, saveAt = "", minAbsBeta = 1e-09, weights = NULL) 
 {
 
     ETA = NULL
@@ -1604,7 +1557,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
     cat("Fitting model using BGLR...\n")
     out = BGLR(y = y, ETA = ETA, df0 = prior$varE$df, S0 = prior$varE$S, 
                nIter = nIter, burnIn = burnIn, thin = thin, saveAt = saveAt, 
-               minAbsBeta = minAbsBeta, weights = weights, ncores = ncores)
+               minAbsBeta = minAbsBeta, weights = weights)
 
     #Backward compatibility with BLR
     if (nLT > 0) {

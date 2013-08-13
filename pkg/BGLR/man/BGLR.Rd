@@ -11,7 +11,7 @@
   BGLR(y, response_type = "gaussian", a=NULL, b=NULL,ETA = NULL, nIter = 1500,
        burnIn = 500, thin = 5, saveAt = "", S0 = NULL, 
        df0 =5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL,
-       ncores = 1, verbose = TRUE, rmExistingFiles = TRUE)
+       verbose = TRUE, rmExistingFiles = TRUE)
 
 }
 \arguments{
@@ -24,7 +24,6 @@
    \item{weights}{(numeric, \eqn{n}{n}) a vector of weights, may be NULL.}
    \item{nIter,burnIn, thin}{(integer) the number of iterations, burn-in and thinning.}
    \item{saveAt}{(string) this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.}
-   \item{ncores}{Number of CPUs used in computations, default value 1.}
    \item{S0}{The scale parameter for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{df0}{The degrees of freedom for the scaled inverse-chi squared distribution for \eqn{\sigma_e^2}{sigma[e]^2}.}
    \item{R2}{...}

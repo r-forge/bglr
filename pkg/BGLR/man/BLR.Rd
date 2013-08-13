@@ -8,7 +8,7 @@
 }
 \usage{
   BLR(y, XF, XR, XL, GF, prior, nIter, burnIn, thin,thin2,saveAt,
-      minAbsBeta,weights, ncores)
+      minAbsBeta,weights)
 }
 \arguments{
   \item{y}{(numeric, \eqn{n}{n}) the data-vector (NAs allowed).}
@@ -36,7 +36,6 @@
   \item{thin2}{This value controls wether the running means are saved to disk or not. If thin2 is greater than nIter the running 
                means are not saved (default, thin2=\eqn{1 \times 10^{10}}{1e10}).}
   \item{minAbsBeta}{The minimum absolute value of the components of \eqn{\boldsymbol \beta_L}{bL} to avoid numeric problems when sampling from \eqn{\boldsymbol \tau^2}, default \eqn{1 \times 10^{-9}}{1e-9} }
-  \item{ncores}{Number of cpu's used in computations, default 1.}
 }
 \details{
 
