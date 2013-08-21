@@ -82,12 +82,15 @@ SEXP sample_beta(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEXP varBj
     {
           xj=pXL+j*rows;
           b=pbL[j];
-          F77_NAME(daxpy)(&rows, &b,xj,&inc, pe, &inc);
+          //F77_NAME(daxpy)(&rows, &b,xj,&inc, pe, &inc);
           rhs=F77_NAME(ddot)(&rows,xj,&inc,pe,&inc)/sigma2e;
+          rhs+=pxL2[j]*b/sigma2e;
   	  c=pxL2[j]/sigma2e + 1.0/pvarBj[j];
 	  pbL[j]=rhs/c + sqrt(1.0/c)*norm_rand();
 
-          b=-pbL[j];
+          b-=pbL[j];
+          //b=-pbL[j];        
+
           F77_NAME(daxpy)(&rows, &b,xj,&inc, pe,&inc);
           
           if(fabs(pbL[j])<smallBeta)
@@ -159,6 +162,7 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
   c1=0.5/sigma2e;
 
   RSS=F77_NAME(ddot)(&rows,perror,&inc,perror,&inc);
+  //RSS=F77_NAME(dnrm2)(&rows,perror,&inc); RSS=RSS*RSS;
 
   for(j=0; j<cols; j++)
   {
@@ -194,6 +198,7 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
                 F77_NAME(daxpy)(&rows, &betaj,xj,&inc, perror, &inc);
         }
         RSS=F77_NAME(ddot)(&rows,perror,&inc,perror,&inc);
+        //RSS=F77_NAME(dnrm2)(&rows,perror,&inc); RSS=RSS*RSS;
      }
 
      //Sample the coefficients
@@ -210,6 +215,7 @@ SEXP sample_beta3(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, S
            betaj=pb[j]-tmp;
            F77_NAME(daxpy)(&rows, &betaj,xj,&inc, perror, &inc);
            RSS=F77_NAME(ddot)(&rows,perror,&inc,perror,&inc);
+           //RSS=F77_NAME(dnrm2)(&rows,perror,&inc); RSS=RSS*RSS;
            pb[j]=tmp;
      }
 

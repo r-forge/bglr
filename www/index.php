@@ -61,6 +61,10 @@ We are currently working in an extension of BLR to include another parametric an
 BayesA, BayesB, BayesCpi, Reproducing Kernel Hilbert Spaces, etc. A snapshoot of the current development can be found 
 in <a href="https://r-forge.r-project.org/R/?group_id=1525">https://r-forge.r-project.org/R/?group_id=1525</a>.
 
+<?php 
+
+/*
+
 <br>
 </br>
 
@@ -81,6 +85,15 @@ in <a href="https://r-forge.r-project.org/R/?group_id=1525">https://r-forge.r-pr
                     <b><a href="BGLRutils_0.1.tgz"><img src="osx_30x30.png" style="vertical-align:middle" title="macosx" alt="macosx">(.tgz)</a></b>  |      <B>Build number: <font style="color:green">52</font></b></td></tr><tr><td>&nbsp;</td><td valign="center" align="right">
 
 </p>
+
+*/
+
+?>
+
+<br>
+</br>
+
+<b>Tutorial/manual:</b>
 
 <p>BGLR package manual <a HREF="BGLR-manual.pdf">Download</a></p>
 <p>BGLR package tutorial <a HREF="BGLR-tutorial.pdf">Download</a></p>

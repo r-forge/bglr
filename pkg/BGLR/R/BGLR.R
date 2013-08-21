@@ -601,7 +601,7 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$varB=rep(LT$S0/(LT$df0+2),LT$p)
   
   # Add one file when S0 is treated as random.
-  fname=paste(saveAt,"ETA_",j,"_ScaleBayesB.dat",sep="") 
+  fname=paste(saveAt,"ETA_",j,"_ScaleBayesA.dat",sep="") 
   if(rmExistingFiles)
   { 
     unlink(fname) 
@@ -628,7 +628,7 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0                                     #\n");
+  cat("#       (` o-o ')      BGLR v1.0 build 61                            #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
