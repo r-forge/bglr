@@ -171,6 +171,8 @@ void read_write_gbs(char **input_file, int *n, int *p, int *skip_columns, char *
 	 free(X);                      // STEP 2: DELETE THE ROWS
 }
 
+
+
 /*
 This function reads a submatrix stored in a binary file
 The file contains a matrix of dimensions n x p, stored in row major order.
@@ -189,6 +191,28 @@ Mean and standard deviations are computed removing the missing values
 Alternative: Impute missing values using naive imputation
 
 */
+
+/*
+Right now the funtion is working only for integer values for 0, 1, 2, 9
+Modify to work with 0-200 and missing value equal to 210
+*/
+
+int byte_to_int(char c)
+{
+   int s=0;
+   int i;
+   const unsigned char mask = '\x01'; //Corresponds to 00000001;
+   char tmp;
+
+   for(i=0; i<8;i++)
+   {
+        tmp = c & mask;
+        c=c>>1;  //Right shif one bit;
+        if(tmp=='\x01') s+=pow(2,i);
+   }
+   return(s);
+}
+
 void read_sub_matrix(double *X, int *rows, int *columns, int *from_column, int *to_column,char **Input_file, double *centers, double *weights, int *center_internally, int *standard_internally)
 {
 	int seek;

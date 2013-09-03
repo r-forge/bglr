@@ -1,11 +1,3 @@
-
-if(FALSE)
-{
-rm(list=ls())
-setwd("/tmp/")
-library(BGLR)
-}
-
 #This function fits a mixed model
 #y=X*Beta + Z*u + e
 #where y is the vector of phenotypes
@@ -15,7 +7,7 @@ library(BGLR)
 #e ~ N(0, varE*I)
 
 #The model is fitted using the algorithm described in Zhou and Stephens, 2012.
-#Genome-wide efficient mixed-model analysis for assiacition studies, Nature genetics, 44(7): 821-824
+#Genome-wide efficient mixed-model analysis for association studies, Nature genetics, 44(7): 821-824
 
 #Additional arguments
 # * method estimation method for the variance components, can be maximum likelihood or restricted maximum likelihood
@@ -163,44 +155,3 @@ fitMixed=function(y, X=NULL, Z=NULL, A=NULL,d=NULL,U=NULL, BLUE=TRUE, BLUP=TRUE,
 	return(ans)
 }
 
-if(FALSE)
-{
-#Examples
-#1) Wheat dataset
-data(wheat)
-A=wheat.A
-y=wheat.Y[,1]
-ETA=list(list(K=A,model="RKHS"))
-set.seed(123)
-fm=BGLR(y=y,ETA=ETA,nIter=5000)
-
- #fm_mixed=fitMixed(y,A=A)
-out=eigen(A)
-fm_mixed=fitMixed(y=y,A=A,d=out$values,U=out$vectors)
-
-plot(fm$ETA[[1]]$u,fm_mixed$u)
-cat("fm_mixed$varE=",fm_mixed$varE,"\n")
-cat("fm$varE=",fm$varE,"\n")
-cat("fm_mixed$varU=",fm_mixed$varU,"\n")
-cat("fm$ETA[[1]]$varU=",fm$ETA[[1]]$varU,"\n")
-
-#mouse dataset
-data(mouse)
-A=mouse.A
-y=mouse.pheno$Obesity.BMI
-ETA=list(list(K=A,model="RKHS"))
-set.seed(123)
-
-fm=BGLR(y=y,ETA=ETA,nIter=5000)
-
-#fm_mixed=fitMixed(y,A=A)
-out=eigen(A)
-fm_mixed=fitMixed(y=y,A=A,d=out$values,U=out$vectors)
-
-plot(fm$ETA[[1]]$u,fm_mixed$u)
-cat("fm_mixed$varE=",fm_mixed$varE,"\n")
-cat("fm$varE=",fm$varE,"\n")
-cat("fm_mixed$varU=",fm_mixed$varU,"\n")
-cat("fm$ETA[[1]]$varU=",fm$ETA[[1]]$varU,"\n")
-
-}
