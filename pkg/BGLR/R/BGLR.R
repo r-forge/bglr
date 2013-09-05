@@ -300,16 +300,21 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     
     if(LT$type=="beta")
     {
-		if(is.null(LT$shape1))
-		{
-		    LT$shape1=1
-		    cat(paste("  shape1 parameter in LP ",j," was missing and was set to ",LT$shape1,"\n",sep=""))
-		}
-		if(is.null(LT$shape2))
-		{
-		    LT$shape2=1
-		    cat(paste("  shape2 parameter in LP ",j," was missing and was set to ",LT$shape1,"\n",sep=""))
-		}
+                if(is.null(LT$probIn))
+  		{
+    			LT$probIn=0.5
+    			cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
+  		}
+
+  		if(is.null(LT$counts))
+  		{
+    			LT$counts=2
+    			cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
+  		} 
+
+                LT$shape1=LT$probIn*LT$counts;
+                LT$shape2=(1-LT$probIn)*LT$counts;
+
 		if(is.null(LT$max))
 		{
 		    LT$max=10*LT$lambda
@@ -628,12 +633,12 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0 build 61                            #\n");
+  cat("#       (` o-o ')      BGLR v1.0 build 63                            #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@gmail.com              #\n");
-  cat("#    (   )     (   )   August, 2013                                  #\n");
+  cat("#    (   )     (   )   September, 2013                               #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
