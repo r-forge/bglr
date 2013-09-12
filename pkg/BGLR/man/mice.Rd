@@ -1,6 +1,6 @@
-\name{mouse}
-\alias{mouse}
-\title{mouse dataset}
+\name{mice}
+\alias{mice}
+\title{mice dataset}
 \description{
 
 The mice data comes from an experiment carried out to detect and locate QTLs for complex traits in a 
@@ -12,14 +12,14 @@ here is body mass index (BMI), and additional information about body weight, sea
 }
 
 \usage{
-  data(mouse)
+  data(mice)
 }
 
 \format{
 
- Matrix mouse.A contains the pedigree.
- The matrix mouse.X contains the markes information and 
- mouse.pheno contains phenotypical information.
+ Matrix mice.A contains the pedigree.
+ The matrix mice.X contains the markes information and 
+ mice.pheno contains phenotypical information.
 
 }
 

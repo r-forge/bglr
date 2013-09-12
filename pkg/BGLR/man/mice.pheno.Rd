@@ -1,9 +1,9 @@
-\name{mouse.pheno}
-\alias{mouse.pheno}
-\title{Phenotypical data for the mouse dataset}
+\name{mice.pheno}
+\alias{mice.pheno}
+\title{Phenotypical data for the mice dataset}
 \description{
 
-A data frame with pheotypical informatio related to diabetes.
+A data frame with pheotypical information related to diabetes.
 The data frame has several columns: SUBJECT.NAME, PROJECT.NAME, PHENOTYPE.NAME,
 Obesity.BMI, Obesity.BodyLength, Date.Month,
 Date.Year, Date.Season,cDate.StudyStartSeconds,

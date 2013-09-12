@@ -1,6 +1,6 @@
-\name{mouse.A}
-\alias{mouse.A}
-\title{Pedigree info for the mouse dataset}
+\name{mice.A}
+\alias{mice.A}
+\title{Pedigree info for the mice dataset}
 \description{
 
 Is a numerator relationship matrix (1814 x 1814) computed

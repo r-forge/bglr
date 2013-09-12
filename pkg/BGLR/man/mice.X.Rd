@@ -1,5 +1,5 @@
-\name{mouse.X}
-\alias{mouse.X}
+\name{mice.X}
+\alias{mice.X}
 \title{Molecular markers}
 \description{
 
