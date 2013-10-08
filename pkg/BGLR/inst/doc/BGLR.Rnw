@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{BGLR-paper}
+%\VignetteIndexEntry{BGLR}
 \documentclass{article}
 \begin{document}
 \end{document}
