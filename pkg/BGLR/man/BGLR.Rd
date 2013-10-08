@@ -9,7 +9,7 @@
 \usage{
   BGLR(y, response_type = "gaussian", a=NULL, b=NULL,ETA = NULL, nIter = 1500,
        burnIn = 500, thin = 5, saveAt = "", S0 = NULL, 
-       df0 =5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL,
+       df0 =5, R2 = 0.5, weights = NULL,
        verbose = TRUE, rmExistingFiles = TRUE)
 
 }
@@ -19,20 +19,24 @@
                         If \code{response_type="gaussian"}, \code{y} should be coercible to numeric. If \code{response_type="ordinal"}, \code{y}
                          should be coercible to character, and the order ot the outcomes is determined based on the
                         alphanumeric order \code{(0<1<2..<a<b..)}. For ordinal traits the probit link is used.}
-   \item{a,b}{(numeric, \eqn{n}{n}) only requiered for censored Gaussian outcomes, \code{a} and \code{b} are vectors specifying lower and 
+   \item{a,b}{(numeric, \eqn{n}{n}) only requiered for censored outcomes, \code{a} and \code{b} are vectors specifying lower and 
               upper bounds for censored observations, respectively. The default value, for non-censored and ordinal 
               outcomes is \code{NULL} (see details).}
    \item{ETA}{ (list) This is a two-level list used to specify the regression function (or linear predictor). By default the linear predictor 
               (the conditional expectation function in case of Gaussian outcomes) includes only an intercept.
-              Regression on covariates and other types of random effects are specified in this two-level list. For instance, the following
-              ETA=list(list(X=W, model="FIXED"), list(X=Z,model="BL"), list(K=G,model="RKHS")), specifies that the linear predictor 
-              should include: an intercept (included by default) plus a linear regression on W with regression 
+              Regression on covariates and other types of random effects are specified in this two-level list. For instance:
+
+              ETA=list(list(X=W, model="FIXED"), 
+                       list(X=Z,model="BL"), 
+                       list(K=G,model="RKHS")), 
+
+	      specifies that the linear predictor should include: an intercept (included by default) plus a linear regression on W with regression 
               coefficients treated as fixed effects (i.e., flat prior), plus regression on Z, with regression coefficients modeled as in the 
               Bayesian Lasso of Park and Casella (2008) plus and a random effect with co-variance structure G.
 
 	      For linear regressions the following options are implemented: BRR (Gaussian prior), BayesA (scaled-t prior), BL (Double-Exponential prior), 
               BayesB (two component mixture prior with a point of mass at zero and a sclaed-t slab), BayesC (two component mixture prior with a point of
-              mass at zero and a Gaussian slab). In linear regressions X can be the incidence matrix for effects or a formula (e.g. \code{X~factor(sex) + age})
+              mass at zero and a Gaussian slab). In linear regressions X can be the incidence matrix for effects or a formula (e.g. \code{~factor(sex) + age})
               in which case the incidence matrix is created internally using the \code{model.matrix} function of R. For Gaussian processes (RKHS) a co-variance matrix
               (K) must be provided. Further detail about the models in BGLR see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}. 
              }
@@ -44,14 +48,12 @@
    \item{S0, df0}{ (numeric) The scale parameter for the scaled inverse-chi squared prior assigned to the residual variance, only used with Gaussian outcomes. 
                   In the parameterization of the scaled-inverse chi square in BGLR the expected values is \code{S0/(df0-2)}. The default value for the 
                   df parameter is 5. If the scale is not specified a value is calculated so that the prior mode of the residual 
-                  variance  equals \code{var(y)*R2} (see below). For further detauls see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}.}
+                  variance  equals \code{var(y)*R2} (see below). For further details see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}.}
    \item{R2}{(numeric, \code{0<R2<1}) The proportion of variance that one expects, a priori, to be explained by the regression. Only used if 
              the hyper-parameters are not specified; if that is the case, internaly, hyper-paramters are set so that the prior modes are consistent with the 
              variance partition specified by R2 and the prior distribution is relatively flat at the mode. For 
              further details see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}.}
    \item{verbose}{(logical) if TRUE the iteration history is printed, default TRUE.}
-   \item{minAbsBeta}{(numeric) The minimum absolute value of the components of \eqn{\boldsymbol \beta_L}{b_L} to avoid numeric problems when 
-                     sampling from \eqn{\boldsymbol \tau^2}{\tau^2}, default \eqn{1 \times 10^{-9}}{1e-9}.}
     \item{rmExistingFiles}{(logical) if TRUE removes existing output files from previous runs, default TRUE.}
 }
 
@@ -86,14 +88,14 @@ Internally, censoring is dealt with as a missing data problem.
 \emph{Ordinal outcomes} are modelled using the probit link, implemented via data augmentation. 
 In this case the linear predictor becomes the mean of the underlying liability variable which is 
 normal with mean equal to the linear predictor and variance equal to one. In case of only two classes 
-(binary) the threshold is set equal to zero, for more than two classess thresholds are estimated 
+(binary outcome) the threshold is set equal to zero, for more than two classess thresholds are estimated 
 from the data. Further details about this approach can be found in Albert and Chib (1993).
 
 }
 
 \value{
 
-A list with estunated posterior means, estiamted posterior standard deviations, and the parameters used to fit the model.
+A list with estimated posterior means, estimated posterior standard deviations, and the parameters used to fit the model.
 See the vignettes in the package (or \url{http://genomics.cimmyt.org/BGLR.pdf}) for further details.
 
 }

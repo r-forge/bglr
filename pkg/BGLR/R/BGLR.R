@@ -229,6 +229,8 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 ## Bayesian LASSO ############################################################
 setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
+    if(is.null(LT$minAbsBeta)) LT$minAbsBeta=1e-9
+
     if(is.null(LT$X)) LT$X=set.X(LT)
 
     LT$X=as.matrix(LT$X)
@@ -633,12 +635,12 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0 build 69                            #\n");
+  cat("#       (` o-o ')      BGLR v1.0 build 70                            #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@gmail.com              #\n");
-  cat("#    (   )     (   )   September, 2013                               #\n");
+  cat("#    (   )     (   )   October, 2013                                 #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
@@ -698,7 +700,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0 (2013-08-09)"
+  BGLR.version = "1.0 (2013-10-08), build 70"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -802,7 +804,7 @@ loglik_ordinal=function(y,yHat,threshold)
 
 BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL, 
     ETA = NULL, nIter = 1500, burnIn = 500, thin = 5, saveAt = "", 
-    S0 = NULL, df0 = 5, R2 = 0.5, minAbsBeta = 1e-09, weights = NULL, 
+    S0 = NULL, df0 = 5, R2 = 0.5, weights = NULL, 
     verbose = TRUE, rmExistingFiles = TRUE) 
 {
     welcome()
@@ -967,7 +969,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "FIXED") {
                   varBj = rep(ETA[[j]]$varB, ETA[[j]]$p)
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta)
+                                             e, varBj, varE, 1e-9)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
                 }#End of fixed effects
@@ -976,7 +978,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "BRR") {
                   varBj = rep(ETA[[j]]$varB, ETA[[j]]$p)
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta)
+                                             e, varBj, varE, 1e-9)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
 
@@ -987,7 +989,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 
                 if(ETA[[j]]$model=="BRR_windows"){
                    ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b,
-                                             e, ETA[[j]]$varB, varE, minAbsBeta)
+                                             e, ETA[[j]]$varB, varE, 1e-9)
 		   ETA[[j]]$b = ans[[1]]
                    e = ans[[2]]
 
@@ -1007,7 +1009,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "BL") {
                   varBj = ETA[[j]]$tau2 * varE
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta)
+                                             e, varBj, varE, ETA[[j]]$minAbsBeta)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
 
@@ -1077,7 +1079,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 if (ETA[[j]]$model == "BayesA") {
                   varBj = ETA[[j]]$varB
                   ans = .Call("sample_beta", n, ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, 
-                                             e, varBj, varE, minAbsBeta)
+                                             e, varBj, varE, 1e-9)
                   ETA[[j]]$b = ans[[1]]
                   e = ans[[2]]
                    
@@ -1101,9 +1103,9 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 		        
                         if(ETA[[j]]$model=="BayesB")
                         {
-                          ans=.Call("sample_beta3",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, ETA[[j]]$varB, varE, minAbsBeta, ETA[[j]]$probIn);
+                          ans=.Call("sample_beta3",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, ETA[[j]]$varB, varE, 1e-9, ETA[[j]]$probIn);
                         }else{
-                          ans=.Call("sample_beta3",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, rep(ETA[[j]]$varB,ETA[[j]]$p), varE, minAbsBeta, ETA[[j]]$probIn);
+                          ans=.Call("sample_beta3",n,ETA[[j]]$p, ETA[[j]]$X, ETA[[j]]$x2, ETA[[j]]$b, ETA[[j]]$d, e, rep(ETA[[j]]$varB,ETA[[j]]$p), varE, 1e-9, ETA[[j]]$probIn);
                         }
 
                         ETA[[j]]$d=ans[[1]]
@@ -1370,7 +1372,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     #return goodies
 
     out = list(y = y0, whichNa = whichNa, saveAt = saveAt, nIter = nIter, 
-               burnIn = burnIn, thin = thin, minAbsBeta = minAbsBeta, 
+               burnIn = burnIn, thin = thin, 
                weights = weights, verbose = verbose, 
                response_type = response_type, df0 = df0, S0 = S0)
 
@@ -1543,7 +1545,8 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
         ETA[[nLT]] = list(X = XL, model = "BL", type = prior$lambda$type, 
                           rate = prior$lambda$rate, shape = prior$lambda$shape, 
                           max = prior$lambda$max, shape1 = prior$lambda$shape1, 
-                          shape2 = prior$lambda$shape2, lambda = prior$lambda$value)
+                          shape2 = prior$lambda$shape2, lambda = prior$lambda$value,
+                          minAbsBeta=minAbsBeta)
     }
 
     #FIXME: In original BLR IDS are used to buid A matrix Z,
@@ -1562,7 +1565,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
     cat("Fitting model using BGLR...\n")
     out = BGLR(y = y, ETA = ETA, df0 = prior$varE$df, S0 = prior$varE$S, 
                nIter = nIter, burnIn = burnIn, thin = thin, saveAt = saveAt, 
-               minAbsBeta = minAbsBeta, weights = weights)
+               weights = weights)
 
     #Backward compatibility with BLR
     if (nLT > 0) {
