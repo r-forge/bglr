@@ -17,11 +17,11 @@
    \item{y}{(numeric, \eqn{n}{n}) the data-vector (NAs allowed).}
    \item{response_type}{(string) admits values \code{"gausian"} or \code{"ordinal"}. The Gaussian outcome may be censored or not (see below). 
                         If \code{response_type="gaussian"}, \code{y} should be coercible to numeric. If \code{response_type="ordinal"}, \code{y}
-                         should be coercible to character, and the order ot the outcomes is determined based on the
+                         should be coercible to character, and the order of the outcomes is determined based on the
                         alphanumeric order \code{(0<1<2..<a<b..)}. For ordinal traits the probit link is used.}
    \item{a,b}{(numeric, \eqn{n}{n}) only requiered for censored outcomes, \code{a} and \code{b} are vectors specifying lower and 
               upper bounds for censored observations, respectively. The default value, for non-censored and ordinal 
-              outcomes is \code{NULL} (see details).}
+              outcomes, is \code{NULL} (see details).}
    \item{ETA}{ (list) This is a two-level list used to specify the regression function (or linear predictor). By default the linear predictor 
               (the conditional expectation function in case of Gaussian outcomes) includes only an intercept.
               Regression on covariates and other types of random effects are specified in this two-level list. For instance:
@@ -34,11 +34,12 @@
               coefficients treated as fixed effects (i.e., flat prior), plus regression on Z, with regression coefficients modeled as in the 
               Bayesian Lasso of Park and Casella (2008) plus and a random effect with co-variance structure G.
 
-	      For linear regressions the following options are implemented: BRR (Gaussian prior), BayesA (scaled-t prior), BL (Double-Exponential prior), 
+
+	      For linear regressions the following options are implemented: FIXED (Flat prior), BRR (Gaussian prior), BayesA (scaled-t prior), BL (Double-Exponential prior), 
               BayesB (two component mixture prior with a point of mass at zero and a sclaed-t slab), BayesC (two component mixture prior with a point of
               mass at zero and a Gaussian slab). In linear regressions X can be the incidence matrix for effects or a formula (e.g. \code{~factor(sex) + age})
               in which case the incidence matrix is created internally using the \code{model.matrix} function of R. For Gaussian processes (RKHS) a co-variance matrix
-              (K) must be provided. Further detail about the models in BGLR see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}. 
+              (K) must be provided. Further details about the models implemented in BGLR see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}. 
              }
    \item{weights}{(numeric, \eqn{n}{n}) a vector of weights, may be \code{NULL}. If weights is not \code{NULL}, the 
                   residual variance of each data-point is set to be proportional to the square of the weight. Only
