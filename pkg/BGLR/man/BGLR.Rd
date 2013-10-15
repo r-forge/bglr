@@ -39,7 +39,7 @@
               BayesB (two component mixture prior with a point of mass at zero and a sclaed-t slab), BayesC (two component mixture prior with a point of
               mass at zero and a Gaussian slab). In linear regressions X can be the incidence matrix for effects or a formula (e.g. \code{~factor(sex) + age})
               in which case the incidence matrix is created internally using the \code{model.matrix} function of R. For Gaussian processes (RKHS) a co-variance matrix
-              (K) must be provided. Further details about the models implemented in BGLR see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}. 
+              (K) must be provided. Further details about the models implemented in BGLR see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR-extdoc.pdf}. 
              }
    \item{weights}{(numeric, \eqn{n}{n}) a vector of weights, may be \code{NULL}. If weights is not \code{NULL}, the 
                   residual variance of each data-point is set to be proportional to the square of the weight. Only
@@ -49,11 +49,11 @@
    \item{S0, df0}{ (numeric) The scale parameter for the scaled inverse-chi squared prior assigned to the residual variance, only used with Gaussian outcomes. 
                   In the parameterization of the scaled-inverse chi square in BGLR the expected values is \code{S0/(df0-2)}. The default value for the 
                   df parameter is 5. If the scale is not specified a value is calculated so that the prior mode of the residual 
-                  variance  equals \code{var(y)*R2} (see below). For further details see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}.}
+                  variance  equals \code{var(y)*R2} (see below). For further details see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR-extdoc.pdf}.}
    \item{R2}{(numeric, \code{0<R2<1}) The proportion of variance that one expects, a priori, to be explained by the regression. Only used if 
              the hyper-parameters are not specified; if that is the case, internaly, hyper-paramters are set so that the prior modes are consistent with the 
              variance partition specified by R2 and the prior distribution is relatively flat at the mode. For 
-             further details see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR.pdf}.}
+             further details see the vignettes in the package or \url{http://genomics.cimmyt.org/BGLR-extdoc.pdf}.}
    \item{verbose}{(logical) if TRUE the iteration history is printed, default TRUE.}
     \item{rmExistingFiles}{(logical) if TRUE removes existing output files from previous runs, default TRUE.}
 }
@@ -97,7 +97,7 @@ from the data. Further details about this approach can be found in Albert and Ch
 \value{
 
 A list with estimated posterior means, estimated posterior standard deviations, and the parameters used to fit the model.
-See the vignettes in the package (or \url{http://genomics.cimmyt.org/BGLR.pdf}) for further details.
+See the vignettes in the package (or \url{http://genomics.cimmyt.org/BGLR-extdoc.pdf}) for further details.
 
 }
 

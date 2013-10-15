@@ -16,15 +16,9 @@ version 1.0 (2012-10-01)
   
   -Binary responses
   -Ordinal responses
-  
-  This version will be incompatible with the previous releases, 
-  because it was necessary to make major changes to the computing routines.
-  
-  This version will allow to use the hardware more efficiently. In UNIX-like 
-  operating systems it uses OpenMP (http://en.wikipedia.org/wiki/OpenMP, http://wwww.openmp.org)
-  to perform the computations. 
-
-version 1.1 (2012-12-13)
 
    New functions to read and write plink files in binary format
 
+version 1.0.1 
+
+  initial release
