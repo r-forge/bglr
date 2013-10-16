@@ -635,7 +635,7 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0 build 73                            #\n");
+  cat("#       (` o-o ')      BGLR v1.0.2 build 75                          #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
@@ -700,7 +700,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0 (2013-10-08), build 73"
+  BGLR.version = "1.0.2 (2013-10-15), build 73"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -1491,7 +1491,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 #the idea is to maintain the compatibility with the function BLR in 
 #the package BLR that was released in 2010, updated in 2011 and 2012
 
-#FIXME: thin2 parameter is missing in BGLR
+#NOTE: thin2 parameter is missing in BGLR
 
 BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL, 
     A = NULL), prior = NULL, nIter = 1100, burnIn = 100, thin = 10, 
@@ -1549,7 +1549,7 @@ BLR=function (y, XF = NULL, XR = NULL, XL = NULL, GF = list(ID = NULL,
                           minAbsBeta=minAbsBeta)
     }
 
-    #FIXME: In original BLR IDS are used to buid A matrix Z,
+    #NOTE: In original BLR IDS are used to buid A matrix Z,
     #and then run the model y=Zu+e, u~MN(0,varU*A), and then using the Cholesky factorization
     #it was possible to fit the model. The algorithm used here is different (Orthogonal variables)
     #and it may be that the IDS are not longer necessary
