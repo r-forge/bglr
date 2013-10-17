@@ -1,3 +1,6 @@
+#This function generates the design matrix
+#for building the linear term in the model
+
 set.X=function(LT)
 {	
 	flag=TRUE
