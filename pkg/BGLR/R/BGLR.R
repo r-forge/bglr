@@ -1,5 +1,5 @@
 #This function creates an incidence matrix that will be included in the 
-#linear term of te model
+#linear term of the model
 #Arguments: LT, Linear term, an object of the class "formula" that also includes
 #optionally a data.frame to obtain the information
 #It returns the incidence matrix
@@ -34,7 +34,6 @@ set.X=function(LT)
 ## Fixed Effects ##################################################################
 #Function for initializing regression coefficients for Fixed effects.
 #All the arguments are defined in the function BGLR
-
 setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
 {
 
@@ -53,10 +52,14 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
     {
         stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }
+
+    #weight inputs if necessary
         
     LT$X=sweep(LT$X,1L,weights,FUN="*")        #weights
     LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
 	
+    
+    #Objects for saving posterior means from MCMC
     LT$b=rep(0,LT$p)
     LT$post_b=rep(0,LT$p)
     LT$post_b2=rep(0,LT$p)
@@ -99,13 +102,13 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
       stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }   
 
-    #Weight observations if necessary
+    #Weight inputs if necessary
     LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
     LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
     sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
     
      
-    #Default df for the prior assigned to the variance component associated to the regression coefficients.
+    #Default df for the prior assigned to the variance of marker effects
     if(is.null(LT$df0))
     {
 	LT$df0=5
@@ -118,7 +121,7 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     }
 
  
-    #Default scale parameter for the prior assigned to the variance component associtate to the regression coefficients.
+    #Default scale parameter for the prior assigned to the variance of marker effects
     if(is.null(LT$S0))
     {
         if(LT$df0<=0) stop("df0>0 in BRR in order to set S0\n")
@@ -129,7 +132,7 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     }
 
     
-    #Objects for saving posterior means for MCMC iterations	
+    #Objects for saving posterior means from MCMC
     LT$b=rep(0,LT$p)
     LT$post_b=rep(0,LT$p)
     LT$post_b2=rep(0,LT$p)
@@ -157,6 +160,8 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 
 setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 {
+
+    #Check the inputs
     if(is.null(LT$X)) LT$X=set.X(LT)
    
     LT$X=as.matrix(LT$X)
@@ -175,7 +180,8 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     {
       stop(paste(" Number of rows of LP ",j,"  not equal to the number of phenotypes.",sep=""))
     }   
-    
+
+    #Weight inputs if necessary
     LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
     LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
     sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
@@ -423,6 +429,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     }
     
     #Defaul value for tolD
+    #Only those eigenvectors whose eigenvalues> tolD are kept.
     if (is.null(LT$tolD)) 
     {
        LT$tolD = 1e-10
@@ -435,7 +442,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     LT$d = LT$d[tmp]
     LT$V = LT$V[, tmp]
     
-    #Default degrees of freedom and scale parameter associated with the variance component
+    #Default degrees of freedom and scale parameter associated with the variance component for marker effect
     if (is.null(LT$df0)) 
     {
       LT$df0 = 5
@@ -483,7 +490,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 }
 
 ###Bayes B and C########################################################################################################################################                 
-#Pseudo BayesB with random scale and random proportion of markers in
+#Pseudo BayesB with random scale and random proportion of markers "in" the model
 #See Variable selection for regression models, 
 #Lynn Kuo and Bani Mallic, 1998. 
 #Bayes C (Habier et al., 2011)
@@ -618,7 +625,8 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$X=as.matrix(LT$X)
   LT$p=ncol(LT$X)
   LT$colNames=colnames(LT$X)
-  
+
+  #Weight inputs if necessary
   LT$X=sweep(LT$X,1L,weights,FUN="*")  #weights
   LT$x2=apply(LT$X,2L,function(x) sum(x^2))  #the sum of the square of each of the columns
   sumMeanXSq = sum((apply(LT$X,2L,mean))^2)
@@ -642,8 +650,8 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
      LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0+2)
      cat(paste(" Scale paramter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
   }
+
   # Improvement: Treat Scale as random, assign a gamma density 
-  
   if(is.null(LT$shape0))
   {
      LT$shape0=1.1
@@ -689,7 +697,7 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0.2 build 77                          #\n");
+  cat("#       (` o-o ')      BGLR v1.0.2 build 78                          #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
@@ -756,7 +764,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0.2 (2013-10-15), build 77"
+  BGLR.version = "1.0.2 (2013-10-15), build 78"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
