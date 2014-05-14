@@ -17,4 +17,28 @@
 #Authors: Gustavo de los Campos & Paulino Perez Rodriguez
 #Birmingaham, Alabama, 2013, 2014
 
+print.BGLR=function(x,...)
+{
+  	if(!inherits(x, "BGLR")) stop("This function only works for objects of class `BGLR'\n");
+}
+
+summary.BGLR=function(object,...)
+{
+	object
+}
+
+residuals.BGLR=function(object,...)
+{
+
+}
+
+predict.BGLR=function(object,newdata,...)
+{
+
+}
+
+effects.BGLR=function(object,...)
+{
+
+}
 
