@@ -17,65 +17,65 @@
 #Authors: Gustavo de los Campos & Paulino Perez Rodriguez
 #Birmingaham, Alabama, 2013, 2014
 
-print.BGLR=function(x,...)
-{
-  	if(!inherits(x, "BGLR")) stop("This function only works for objects of class `BGLR'\n");
-}
-
 summary.BGLR=function(object,...)
 {
-	tmp<-paste('--------------------> Summary of data & model <--------------------')
-   	cat(tmp,'\n\n')
+    
+    if(!inherits(object, "BGLR")) stop("This function only works for objects of class `BGLR'")
+    
+    tmp<-paste('--------------------> Summary of data & model <--------------------')
+    cat(tmp,'\n\n')
 
-   	tmp<-paste(' Number of phenotypes=', sum(!is.na(object$y)))
-        cat(tmp,'\n')
+    tmp<-paste(' Number of phenotypes=', sum(!is.na(object$y)))
+    cat(tmp,'\n')
 
-	cat(' Min (TRN)= ', min(object$y,na.rm=TRUE),'\n')
-	cat(' Max (TRN)= ', max(object$y,na.rm=TRUE),'\n')
-	cat(' Variance of phenotypes (TRN)=', round(var(object$y,na.rm=TRUE),4),'\n') 
- 	cat(' Variance of weighted phenotypes (TRN)=',round(var(object$y*object$weights,na.rm=TRUE),4),'\n')
-        cat(' Residual variance=',round(object$varE,4),'\n')
+    cat(' Min (TRN)= ', min(object$y,na.rm=TRUE),'\n')
+    cat(' Max (TRN)= ', max(object$y,na.rm=TRUE),'\n')
+    cat(' Variance of phenotypes (TRN)=', round(var(object$y,na.rm=TRUE),4),'\n') 
+    cat(' Residual variance=',round(object$varE,4),'\n')
 
-        n<-length(object$y)
+    n<-length(object$y)
 
-        if(any(is.na(object$y)))
-	{     
+    if(any(is.na(object$y)))
+    {     
      		tst<-which(is.na(object$y))
 
      		cat(' N-TRN=',n-length(tst), ' N-TST=',length(tst),'\n')
      
-     		cat(' Correlation TRN:\n')
+     		cat(' Correlation TRN=',round(cor(object$y[-tst],object$yHat[-tst]),4),'\n')
 
-     		cat('   - Standard= ',round(cor(object$y[-tst],object$yHat[-tst]),4),'\n')
-  
-     		cat('   - Weighted= ',round(cor((object$weights*object$y)[-tst],(object$weights*object$yHat)[-tst]),4),'\n')
    }else{
-     cat(' N-TRN=',n,'  N-TST=0', '\n\n')
-
-     cat(' Correlation TRN:\n')
-     
-     cat('   - Standard= ',round(cor(object$y,object$yHat),4),'\n')
-
-     cat('   - Weighted= ',round(cor(object$weights*object$y,object$weights*object$yHat),4),'\n')
-
+       cat(' N-TRN=',n,'  N-TST=0', '\n\n')
    }
   
    cat('\n')
-   cat(' -- Information about the linear term -- \n')
+   cat(' -- Linear Predictor -- \n')
    cat('\n')
-   cat(' Model includes intercept by default\n')
+   cat(' Intercept included by default\n')
    
    for(k in 1:length(object$ETA))
    {
         if(object$ETA[[k]]$model=="FIXED")
 	{
-		cat(" Coefficientes in ETA[",k,"] are asigned a flat prior\n")	
+	    if(!is.null(names(object$ETA)[k])){
+		   cat(" Coefficientes in ETA[",k,"] (",names(ETA)[k],") were asigned a flat prior\n")
+		}else{
+		   cat(" Coefficientes in ETA[",k,"] (no-name) are asigned a flat prior\n")
+		}
 	}else{
 		if(object$ETA[[k]]$model=="RKHS")
 		{
-			cat(" ETA[",k,"] assumed as a random effect normally distributed with \n covariance (or its eigendecoposition) provided by user \n");
+
+			if(!is.null(names(object$ETA)[k])){
+				cat(" Coefficientes in ETA[",k,"] (",names(object$ETA)[k],") were assumed to be normally distributed with zero mean and \n covariance (or its eigendecoposition) provided by user \n")
+			}else{
+				cat(" Coefficientes in ETA[",k,"] (no-name) were assumed to be normally distributed with zero mean and \n covariance (or its eigendecoposition) provided by user \n")
+			}
 		}else{
-			cat(" Coefficientes in ETA[",k,"] modeled as in ", object$ETA[[k]]$model,"\n")
+			if(!is.null(names(object$ETA)[k])){
+				cat(" Coefficientes in ETA[",k,"] (",names(object$ETA)[k],") modeled as in ", object$ETA[[k]]$model,"\n")
+			}else{
+				cat(" Coefficientes in ETA[",k,"] (no-name) modeled as in ", object$ETA[[k]]$model,"\n")
+			}		
 		}
 	}
    } 
@@ -85,16 +85,29 @@ summary.BGLR=function(object,...)
 
 residuals.BGLR=function(object,...)
 {
+    if(!inherits(object, "BGLR")) stop("This function only works for objects of class `BGLR'")
 	object$y-object$yHat
 }
 
 predict.BGLR=function(object,newdata,...)
 {
+    if (!inherits(object, "BGLR")) stop("This function only works for objects of class `BGLR'")
 	object$yHat
 }
 
-effects.BGLR=function(object,...)
-{
+effects.BGLR=function(object,...){
+    if(!inherits(object, "BGLR")) stop("This function only works for objects of class `BGLR'")
 	object$ETA	
 }
+
+plot.BGLR=function(x,...)
+{
+  ### Check that object is compatible
+  if(!inherits(x, "BGLR")) stop("This function only works for objects of class `BGLR'")
+  
+  limits<-range(c(x$y,x$yHat),na.rm=TRUE)
+  plot(x$y,x$yHat,main="Training",xlim=limits,ylim=limits,xlab='Response',ylab='Prediction'); 
+  abline(a=0,b=1,lty=3)
+}
+
 
