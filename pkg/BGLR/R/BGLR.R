@@ -316,7 +316,7 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 		LT$type="gamma"
 		cat(paste("  By default, the prior density of lambda^2 in the LP ",j,"  was set to gamma.\n",sep=""))
     }else{
-		if(!LT$type%in%c("gamma","beta","fixed")) stop(" The prior for lambda^2 should be gamma, beta or a point of mass (i.e., fixed lambda).\n")
+		if(!LT$type%in%c("gamma","beta","FIXED")) stop(" The prior for lambda^2 should be gamma, beta or a point of mass (i.e., fixed lambda).\n")
     }
     if(LT$type=="gamma")
     {
