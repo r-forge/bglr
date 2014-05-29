@@ -57,7 +57,7 @@ summary.BGLR=function(object,...)
         if(object$ETA[[k]]$model=="FIXED")
 	{
 	    if(!is.null(names(object$ETA)[k])){
-		   cat(" Coefficientes in ETA[",k,"] (",names(ETA)[k],") were asigned a flat prior\n")
+		   cat(" Coefficientes in ETA[",k,"] (",names(object$ETA)[k],") were asigned a flat prior\n")
 		}else{
 		   cat(" Coefficientes in ETA[",k,"] (no-name) are asigned a flat prior\n")
 		}

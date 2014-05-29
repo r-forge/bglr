@@ -62,8 +62,11 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles)
     #Objects for saving posterior means from MCMC
     LT$b=rep(0,LT$p)
     LT$post_b=rep(0,LT$p)
-    LT$post_b2=rep(0,LT$p)
-    fname=paste(saveAt,"ETA_",j,"_b.dat",sep="")
+    LT$post_b2=rep(0,LT$p)   
+
+    fname=paste(saveAt,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_b.dat",sep="")
+    #fname=paste(saveAt,"ETA_",j,"_b.dat",sep="")
+
     LT$NamefileOut=fname; 
 
     if(rmExistingFiles)
@@ -139,7 +142,9 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$varB=LT$S0/(LT$df0+2)
     LT$post_varB=0                 
     LT$post_varB2=0
-    fname=paste(saveAt,"ETA_",j,"_varB.dat",sep=""); 
+    
+    fname=paste(saveAt,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_varB.dat",sep="")
+    #fname=paste(saveAt,"ETA_",j,"_varB.dat",sep=""); 
     
     if(rmExistingFiles)
     { 
@@ -239,7 +244,9 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$varB=rep(LT$S0/(LT$df0+2),LT$p)
     LT$post_varB=0                 
     LT$post_varB2=0
-    fname=paste(saveAt,"ETA_",j,"_varB.dat",sep=""); 
+
+    fname=paste(saveAt,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_varB.dat",sep="")
+    #fname=paste(saveAt,"ETA_",j,"_varB.dat",sep=""); 
     
     if(rmExistingFiles)
     { 
@@ -368,7 +375,8 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     LT$post_tau2=0  
     LT$post_lambda=0
     
-    fname=paste(saveAt,"ETA_",j,"_lambda.dat",sep="");
+    fname=paste(saveAt,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_lambda.dat",sep="")
+    #fname=paste(saveAt,"ETA_",j,"_lambda.dat",sep="");
     
     if(rmExistingFiles)
     { 
@@ -469,7 +477,8 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     LT$uStar=rep(0, LT$levelsU)
     
     #Output files
-    fname=paste(saveAt,"ETA_",j,"_varU.dat",sep="")
+    fname=paste(saveAt,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_varU.dat",sep="")
+    #fname=paste(saveAt,"ETA_",j,"_varU.dat",sep="")
     LT$NamefileOut=fname; 
 
     if(rmExistingFiles)
@@ -573,10 +582,13 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   	}
         LT$S=LT$S0
   	LT$varB = LT$varB=rep(LT$S0/(LT$df0+2),LT$p)
-        fname=paste(saveAt,"ETA_",j,"_parBayesB.dat",sep="")
+        fname=paste(saveAT,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_parBayesB.dat",sep="")
+        #fname=paste(saveAt,"ETA_",j,"_parBayesB.dat",sep="")
   }else{
 	LT$varB = LT$S0
-	fname=paste(saveAt,"ETA_",j,"_parBayesC.dat",sep="")
+        fname=paste(saveAT,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_parBayesC.dat",sep="")
+	#fname=paste(saveAt,"ETA_",j,"_parBayesC.dat",sep="")
+        
   }
 
   LT$X=as.vector(LT$X)
@@ -668,7 +680,8 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   LT$varB=rep(LT$S0/(LT$df0+2),LT$p)
   
   # Add one file when S0 is treated as random.
-  fname=paste(saveAt,"ETA_",j,"_ScaleBayesA.dat",sep="") 
+  fname=paste(saveAt,"ETA_",ifelse(is.null(names(ETA)[j]),j,names(ETA)[j]),"_ScaleBayesA.dat",sep="")
+  #fname=paste(saveAt,"ETA_",j,"_ScaleBayesA.dat",sep="") 
   if(rmExistingFiles)
   { 
     unlink(fname) 
@@ -697,12 +710,12 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0.3 build 80                          #\n");
+  cat("#       (` o-o ')      BGLR v1.0.3 build 85                          #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@gmail.com              #\n");
-  cat("#    (   )     (   )   October, 2013                                 #\n");
+  cat("#    (   )     (   )   May, 2014                                     #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
@@ -764,7 +777,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0.3 (2014-05-25), build 80"
+  BGLR.version = "1.0.3 (2014-05-29), build 85"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -876,7 +889,11 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     S0 = NULL, df0 = 5, R2 = 0.5, weights = NULL, 
     verbose = TRUE, rmExistingFiles = TRUE) 
 {
-    welcome()
+    if(verbose)
+    {
+	welcome()
+    }
+
     IDs=names(y)
     if (!(response_type %in% c("gaussian", "ordinal")))  stop(" Only gaussian and ordinal responses are allowed\n")
 
@@ -1333,6 +1350,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
                     if (ETA[[j]]$model == "RKHS") {
                       ETA[[j]]$post_varU = ETA[[j]]$post_varU * k + ETA[[j]]$varU/nSums
+                      ETA[[j]]$post_varU2 = ETA[[j]]$post_varU2 * k + (ETA[[j]]$varU^2)/nSums
                       ETA[[j]]$post_uStar = ETA[[j]]$post_uStar * k + ETA[[j]]$uStar/nSums
                       ETA[[j]]$post_u = ETA[[j]]$post_u * k + ETA[[j]]$u/nSums
                       ETA[[j]]$post_u2 = ETA[[j]]$post_u2 * k + (ETA[[j]]$u^2)/nSums
@@ -1518,7 +1536,8 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                ETA[[i]]$u=ETA[[i]]$post_u
                ETA[[i]]$uStar=ETA[[i]]$post_uStar
                ETA[[i]]$varU=ETA[[i]]$post_varU
-               tmp=which(names(ETA[[i]])%in%c("post_varU","post_uStar","post_u","post_u2"))
+               ETA[[i]]$SD.varU=sqrt(ETA[[i]]$post_varU2 - ETA[[i]]$post_varU^2)
+               tmp=which(names(ETA[[i]])%in%c("post_varU","post_varU2","post_uStar","post_u","post_u2"))
                ETA[[i]]=ETA[[i]][-tmp]
             }
 
