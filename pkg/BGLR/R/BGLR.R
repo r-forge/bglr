@@ -592,6 +592,7 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   }
 
   LT$fileOut=file(description=fname,open="w")
+  LT$NamefileOut=fname;
   
   if(model=="BayesB")
   {
@@ -678,7 +679,9 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   { 
     unlink(fname) 
   }
+
   LT$fileOut=file(description=fname,open="w")
+  LT$NamefileOut=fname;
     
   LT$X=as.vector(LT$X)
   
@@ -702,12 +705,12 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0.3 build 89                          #\n");
+  cat("#       (` o-o ')      BGLR v1.0.3 build 90                          #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@gmail.com              #\n");
-  cat("#    (   )     (   )   May, 2014                                     #\n");
+  cat("#    (   )     (   )   June, 2014                                    #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
@@ -769,7 +772,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 2.15.0 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0.3 (2014-05-29), build 89"
+  BGLR.version = "1.0.3 (2014-06-04), build 90"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
