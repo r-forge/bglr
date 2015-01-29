@@ -109,5 +109,3 @@ plot.BGLR=function(x,...)
   plot(x$y,x$yHat,main="Training",xlim=limits,ylim=limits,xlab='Response',ylab='Prediction'); 
   abline(a=0,b=1,lty=3)
 }
-
-

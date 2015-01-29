@@ -29,3 +29,7 @@ version 1.0.2
 
 version 1.0.3
   some methods added: summary, residuals, predict, effects
+
+version 1.0.4
+  methods added to deal with heterogeneous variances
+  bug fixes for BayesB and BayesC-pi
