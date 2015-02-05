@@ -7,6 +7,7 @@
 
 
 /*
+ *
  * This is a generic function to sample betas in various models, including 
  * Bayesian LASSO, BayesA, Bayesian Ridge Regression, BayesCpi, etc.
  
