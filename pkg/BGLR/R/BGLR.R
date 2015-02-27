@@ -642,6 +642,7 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
   LT$post_varB2=0
   LT$post_d=0
   LT$post_probIn=0
+  LT$post_probIn2=0
   LT$post_b=rep(0,LT$p)
   LT$post_b2=rep(0,LT$p)
 
@@ -742,7 +743,7 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0.4 build 95                          #\n");
+  cat("#       (` o-o ')      BGLR v1.0.4 build 96                          #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
@@ -809,7 +810,7 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
     stop("This package requires R 3.1.2 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0.4 (2015-02-27), build 95"
+  BGLR.version = "1.0.4 (2015-02-27), build 96"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
@@ -1513,6 +1514,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                       ETA[[j]]$post_varB2 = ETA[[j]]$post_varB2 * k + (ETA[[j]]$varB^2)/nSums
                       ETA[[j]]$post_d = ETA[[j]]$post_d * k + (ETA[[j]]$d)/nSums
                       ETA[[j]]$post_probIn = ETA[[j]]$post_probIn * k + (ETA[[j]]$probIn)/nSums
+                      ETA[[j]]$post_probIn2 = ETA[[j]]$post_probIn2 * k + (ETA[[j]]$probIn^2)/nSums
                     }
 
                     if (ETA[[j]]$model == "BayesA") {
@@ -1532,6 +1534,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                         ETA[[j]]$post_varB2=ETA[[j]]$post_varB2*k+(ETA[[j]]$varB^2)/nSums
                         ETA[[j]]$post_d = ETA[[j]]$post_d * k + (ETA[[j]]$d)/nSums
                         ETA[[j]]$post_probIn = ETA[[j]]$post_probIn * k + (ETA[[j]]$probIn)/nSums
+                        ETA[[j]]$post_probIn2 = ETA[[j]]$post_probIn2 * k + (ETA[[j]]$probIn^2)/nSums
                         ETA[[j]]$post_S = ETA[[j]]$post_S * k + (ETA[[j]]$S)/nSums
 			ETA[[j]]$post_S2 = ETA[[j]]$post_S2 * k + (ETA[[j]]$S^2)/nSums
                     }
@@ -1725,7 +1728,8 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
             {
 	        ETA[[i]]$d=ETA[[i]]$post_d
                 ETA[[i]]$probIn=ETA[[i]]$post_probIn
-                tmp = which(names(ETA[[i]]) %in% c("post_d", "post_probIn"))
+		ETA[[i]]$SD.probIn=sqrt(ETA[[i]]$post_probIn2 - (ETA[[i]]$post_probIn^2))
+                tmp = which(names(ETA[[i]]) %in% c("post_d", "post_probIn","post_probIn2"))
                 ETA[[i]] = ETA[[i]][-tmp]
             }
             
