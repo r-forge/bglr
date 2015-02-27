@@ -291,9 +291,14 @@ SEXP sample_beta_BB_BCp_groups(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, 
   ngroups=INTEGER_VALUE(nGroups);
   g=INTEGER_POINTER(groups);
 
-  c1 =(double *) malloc(ngroups); 
-  Xe =(double *) malloc(ngroups);
-  dRSS=(double *) malloc(ngroups);
+  //c1 =(double *) malloc(ngroups); 
+  c1=(double *) R_alloc(ngroups, sizeof(double));
+
+  //Xe =(double *) malloc(ngroups);
+  Xe=(double *) R_alloc(ngroups, sizeof(double));
+ 
+  //dRSS=(double *) malloc(ngroups);
+  dRSS=(double *) R_alloc(ngroups,sizeof(double));
 
   GetRNGstate();
 
@@ -532,7 +537,8 @@ SEXP sample_beta_groups(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEX
     ngroups=INTEGER_VALUE(nGroups);
     g=INTEGER_POINTER(groups);
 
-    rhs =(double *) malloc(ngroups);
+    //rhs =(double *) malloc(ngroups);
+    rhs=(double *) R_alloc(ngroups, sizeof(double));
     
     for(j=0; j<cols;j++)
     {
@@ -608,7 +614,7 @@ SEXP sample_beta_groups(SEXP n, SEXP pL, SEXP XL, SEXP xL2, SEXP bL, SEXP e, SEX
 
       UNPROTECT(6);
 
-      free(rhs);
+      //free(rhs);
 
       return(list);
 }
