@@ -61,7 +61,7 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles,groups,nGroups)
         x2=matrix(NA,nrow=nGroups,ncol=ncol(LT$X))
         for(g in 1:nGroups)
         {
-                x2[g,]=apply(LT$X[groups==g,],2L,function(x) sum(x^2)) #the sum of the square of each of the columns for each group
+                x2[g,]=apply(LT$X[groups==g,,drop=FALSE],2L,function(x) sum(x^2)) #the sum of the square of each of the columns for each group
         }
         LT$x2=x2;
     }else{
@@ -94,7 +94,7 @@ setLT.Fixed=function(LT,n,j,y,weights,nLT,saveAt,rmExistingFiles,groups,nGroups)
 ## Gaussian Regression ############################################################
 #Function for initializing regression coefficients for Ridge Regression.
 #All the arguments are defined in the function BGLR
-setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,groups,nGroups)
+setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,groups,nGroups,verbose)
 {
     #Check inputs
 
@@ -123,7 +123,7 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,groups,nGroups
 	x2=matrix(NA,nrow=nGroups,ncol=ncol(LT$X))
 	for(g in 1:nGroups)
 	{
-		x2[g,]=apply(LT$X[groups==g,],2L,function(x) sum(x^2)) #the sum of the square of each of the columns for each group
+		x2[g,]=apply(LT$X[groups==g,,drop=FALSE],2L,function(x) sum(x^2)) #the sum of the square of each of the columns for each group
 	}
         LT$x2=x2;
     }else{
@@ -136,7 +136,11 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,groups,nGroups
     if(is.null(LT$df0))
     {
 	LT$df0=5
-	cat(paste(" Degree of freedom of LP ",j,"  set to default value (",LT$df0,").\n",sep=""))
+
+	if(verbose)
+	{
+		cat(paste(" Degree of freedom of LP ",j,"  set to default value (",LT$df0,").\n",sep=""))
+	}
     }
 
     if(is.null(LT$R2))
@@ -152,7 +156,11 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,groups,nGroups
 
 	LT$MSx=sum(LT$x2)/n-sumMeanXSq       
 	LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(LT$MSx))*(LT$df0+2)  
-	cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
+	
+	if(verbose)
+	{
+		cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
+	}
     }
 
     
@@ -184,7 +192,7 @@ setLT.BRR=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,groups,nGroups
 #LT has two extra attributes: window_list, and n_windows
 #If n_windows is given the the program will obtain a list with the markers in each sliding window.
 
-setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
+setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,verbose)
 {
 
     #Check the inputs
@@ -216,7 +224,10 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     if(is.null(LT$df0))
     {
 	LT$df0=5
-	cat(paste(" Degree of freedom of LP ",j,"  set to default value (",LT$df0,").\n",sep=""))
+	if(verbose)
+	{
+		cat(paste(" Degree of freedom of LP ",j,"  set to default value (",LT$df0,").\n",sep=""))
+	}
     }
 
     if(is.null(LT$R2))
@@ -229,8 +240,11 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
         if(LT$df0<=0) stop("df0>0 in BRR in order to set S0\n")
 
 	LT$MSx=sum(LT$x2)/n-sumMeanXSq       
-	LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(LT$MSx))*(LT$df0+2)  
-	cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
+	LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(LT$MSx))*(LT$df0+2) 
+	if(verbose)
+	{ 
+		cat(paste(" Scale parameter of LP ",j,"  set to default value (",LT$S0,") .\n",sep=""))
+	}
     }
 
     if(is.null(LT$windows_list))
@@ -285,7 +299,7 @@ setLT.BRR_windows=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 ## de los Campos et al (2009). 
 #  This functions simply sets hyper-parameters for quantities involved in BL regression
 
-setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
+setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles,verbose)
 {
     #Check the inputs
     if(is.null(LT$minAbsBeta)) LT$minAbsBeta=1e-9
@@ -331,7 +345,10 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     {
 		LT$lambda2=2*(1-R2)/(LT$R2)*LT$MSx
 		LT$lambda=sqrt(LT$lambda2)
-		cat(paste(" Initial value of lambda in LP ",j," was set to default value (",LT$lambda,")\n",sep=""))
+		if(verbose)
+		{
+			cat(paste(" Initial value of lambda in LP ",j," was set to default value (",LT$lambda,")\n",sep=""))
+		}
     }else{
 	if(LT$lambda<0) stop(" lambda should be positive\n");
         LT$lambda2=LT$lambda^2
@@ -341,7 +358,10 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
     if(is.null(LT$type))
     {
 		LT$type="gamma"
-		cat(paste("  By default, the prior density of lambda^2 in the LP ",j,"  was set to gamma.\n",sep=""))
+		if(verbose)
+		{
+			cat(paste("  By default, the prior density of lambda^2 in the LP ",j,"  was set to gamma.\n",sep=""))
+		}
     }else{
 		if(!LT$type%in%c("gamma","beta","FIXED")) stop(" The prior for lambda^2 should be gamma, beta or a point of mass (i.e., fixed lambda).\n")
     }
@@ -350,13 +370,19 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 		if(is.null(LT$shape))
                 {
 			 LT$shape=1.1
-			 cat(paste("  shape parameter in LP ",j," was missing and was set to ",LT$shape,"\n",sep=""))
+			 if(verbose)
+			 {
+			 	cat(paste("  shape parameter in LP ",j," was missing and was set to ",LT$shape,"\n",sep=""))
+			 }
 		}
 		
 		if(is.null(LT$rate))
                 {
 			 LT$rate=(LT$shape-1)/LT$lambda2
-			 cat(paste("  rate parameter in LP ",j," was missing and was set to ",LT$rate,"\n",sep=""))
+			 if(verbose)
+			 {
+			 	cat(paste("  rate parameter in LP ",j," was missing and was set to ",LT$rate,"\n",sep=""))
+			 }
 		}	
     }
     
@@ -365,13 +391,19 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
                 if(is.null(LT$probIn))
   		{
     			LT$probIn=0.5
-    			cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
+			if(verbose)
+			{
+    				cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
+			}
   		}
 
   		if(is.null(LT$counts))
   		{
     			LT$counts=2
-    			cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
+			if(verbose)
+			{
+    				cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
+			}
   		} 
 
                 LT$shape1=LT$probIn*LT$counts;
@@ -380,7 +412,10 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 		if(is.null(LT$max))
 		{
 		    LT$max=10*LT$lambda
-		    cat(paste("  max parameter in LP ",j," was missing and was set to ",LT$max,"\n",sep=""))
+		    if(verbose)
+		    {
+		    	cat(paste("  max parameter in LP ",j," was missing and was set to ",LT$max,"\n",sep=""))
+		    }
 		}
     }
 
@@ -416,7 +451,7 @@ setLT.BL=function(LT,y,n,j,weights,nLT,R2,saveAt,rmExistingFiles)
 #for Reproducing Kernel Hilbert Spaces. The algorithm used here is 
 #Fully described in de los Campos et al (2010).
 
-setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)  
+setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles,verbose)  
 {
 
     #Checking inputs
@@ -460,7 +495,10 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     if (is.null(LT$tolD)) 
     {
        LT$tolD = 1e-10
-       cat(paste("  Default value of minimum eigenvalue in LP ",j," was set to ",LT$tolD,"\n",sep=""))
+       if(verbose)
+       {
+       		cat(paste("  Default value of minimum eigenvalue in LP ",j," was set to ",LT$tolD,"\n",sep=""))
+       }
     }
     
     #Removing elements whose eigenvalues < tolD
@@ -473,7 +511,10 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
     if (is.null(LT$df0)) 
     {
       LT$df0 = 5
-      cat(paste("  default value of df0 in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
+      if(verbose)
+      {
+      	cat(paste("  default value of df0 in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
+      }
     }
    
     if(is.null(LT$R2))
@@ -486,7 +527,11 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
           if(LT$df0<=0) stop("df0>0 in RKHS in order to set S0\n");
 
 	  LT$S0=((var(y,na.rm=TRUE)*LT$R2)/(mean(LT$d)))*(LT$df0+2)
-          cat(paste("  default value of S0 in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+
+	  if(verbose)
+	  {
+             cat(paste("  default value of S0 in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+	  }
     }
     
     LT$u=rep(0,nrow(LT$V))
@@ -522,7 +567,7 @@ setLT.RKHS=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
 #Lynn Kuo and Bani Mallic, 1998. 
 #Bayes C (Habier et al., 2011)
 
-setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups, nGroups)
+setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups, nGroups,verbose)
 {
 
   model=LT$model
@@ -543,7 +588,7 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
         x2=matrix(NA,nrow=nGroups,ncol=ncol(LT$X))
         for(g in 1:nGroups)
         {
-                x2[g,]=apply(LT$X[groups==g,],2L,function(x) sum(x^2)) #the sum of the square of each of the columns for each group
+                x2[g,]=apply(LT$X[groups==g,,drop=FALSE],2L,function(x) sum(x^2)) #the sum of the square of each of the columns for each group
         }
         LT$x2=x2;
     }else{
@@ -560,7 +605,10 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
   if(is.null(LT$R2))
   {
     LT$R2=R2/nLT
-    cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
+    if(verbose)
+    {
+      cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
+    }
   }
 
   #Default value for the degrees of freedom associated with the distribution assigned to the variance
@@ -568,7 +616,10 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
   if(is.null(LT$df0))
   {
     LT$df0= 5
-    cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
+    if(verbose)
+    {
+    	cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,"\n",sep=""))
+    }
   }
 
 
@@ -576,7 +627,10 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
   if(is.null(LT$probIn))
   {
     LT$probIn=0.5
-    cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
+    if(verbose)
+    {	
+       cat(paste("  probIn in LP ",j," was missing and was set to ",LT$probIn,"\n",sep=""))
+    }
   } 
 
 
@@ -584,7 +638,10 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
   if(is.null(LT$counts))
   {
     LT$counts=10
-    cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
+    if(verbose)
+    {
+       cat(paste("  Counts in LP ",j," was missing and was set to ",LT$counts,"\n",sep=""))
+    }
   }
 
   LT$countsIn=LT$counts * LT$probIn
@@ -596,7 +653,10 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
   {
      if(LT$df0<=0) stop(paste("df0>0 in ",model," in order to set S0\n",sep=""));
      LT$S0=var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0+2)/LT$probIn
-     cat(paste(" Scale parameter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+     if(verbose)
+     {
+     	cat(paste(" Scale parameter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+     }
   }
  
   LT$b=rep(0, LT$p)
@@ -660,7 +720,7 @@ setLT.BayesBandC=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles, groups
 #Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps
 #Genetics 157: 1819-1829, Modified so that the Scale parameter is estimated from data (a gamma prior is assigned)
 
-setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
+setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles,verbose)
 {
 
   #Ckecking inputs 
@@ -679,12 +739,19 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   #Default degrees of freedom for the prior assigned to the variance of markers
   if(is.null(LT$df0))
   {
-     LT$df0 = 5  
-     cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,".\n",sep=""))
+     LT$df0 = 5 
+     if(verbose)
+     { 
+     	cat(paste("  DF in LP ",j," was missing and was set to ",LT$df0,".\n",sep=""))
+     }
   }
-  if(is.null(LT$R2)){
-  	LT$R2=R2/nLT
-    cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
+  if(is.null(LT$R2))
+  {
+    LT$R2=R2/nLT
+    if(verbose)
+    {
+    	cat(paste("  R2 in LP ",j," was missing and was set to ",LT$R2,"\n",sep=""))
+    }
   }
 
   #Defuault scale parameter for the prior assigned to the variance of markers
@@ -692,7 +759,10 @@ setLT.BayesA=function(LT,y,n,j,weights,saveAt,R2,nLT,rmExistingFiles)
   {
      if(LT$df0<=0) stop("df0>0 in BayesA in order to set S0\n")
      LT$S0 = var(y, na.rm = TRUE)*LT$R2/(LT$MSx)*(LT$df0+2)
-     cat(paste(" Scale parameter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+     if(verbose)
+     {
+     	cat(paste(" Scale parameter in LP ",j," was missing and was set to ",LT$S0,"\n",sep=""))
+     }
   }
 
   # Improvement: Treat Scale as random, assign a gamma density 
@@ -743,12 +813,12 @@ welcome=function()
   cat("\n");
   cat("#--------------------------------------------------------------------#\n");
   cat("#        _\\\\|//_                                                     #\n");
-  cat("#       (` o-o ')      BGLR v1.0.4 build 96                          #\n");
+  cat("#       (` o-o ')      BGLR v1.0.4 build 97                          #\n");
   cat("#------ooO-(_)-Ooo---------------------------------------------------#\n");
   cat("#                      Bayesian Generalized Linear Regression        #\n");
   cat("#                      Gustavo de los Campos, gdeloscampos@gmail.com #\n");
   cat("#    .oooO     Oooo.   Paulino Perez, perpdgo@gmail.com              #\n");
-  cat("#    (   )     (   )   February, 2015                                #\n");
+  cat("#    (   )     (   )   April, 2015                                   #\n");
   cat("#_____\\ (_______) /_________________________________________________ #\n");
   cat("#      \\_)     (_/                                                   #\n");
   cat("#                                                                    #\n");
@@ -806,16 +876,20 @@ metropLambda=function (tau2, lambda, shape1 = 1.2, shape2 = 1.2, max = 200, ncp 
 .onAttach = function(library, pkg)
 {
   Rv = R.Version()
-  if(!exists("getRversion", baseenv()) || (getRversion() < "3.1.2"))
-    stop("This package requires R 3.1.2 or later")
+  if(!exists("getRversion", baseenv()) || (getRversion() < "3.1.3"))
+    stop("This package requires R 3.1.3 or later")
   assign(".BGLR.home", file.path(library, pkg),
          pos=match("package:BGLR", search()))
-  BGLR.version = "1.0.4 (2015-02-27), build 96"
+  BGLR.version = "1.0.4 (2015-04-06), build 97"
   assign(".BGLR.version", BGLR.version, pos=match("package:BGLR", search()))
   if(interactive())
   {
-    packageStartupMessage(paste("Package 'BGLR', ", BGLR.version, ". ",sep=""),appendLF=TRUE)
-    packageStartupMessage("Type 'help(BGLR)' for summary information",appendLF=TRUE)
+    packageStartupMessage(paste("# Package Bayesian Generalized Regression (BGLR), ", BGLR.version, ". ",sep=""),appendLF=TRUE)
+    packageStartupMessage("# Gustavo de los Campos & Paulino Perez",appendLF=TRUE)
+    packageStartupMessage("# Support provided by the U.S., National Institutes of Health (NIH)", appendLF=TRUE)
+    packageStartupMessage("# (Grant: R01GM101219, NIGMS)", appendLF=TRUE)
+    packageStartupMessage("# and by the International Maize and Wheat Improvement Center (CIMMyT).",appendLF=TRUE)                        
+    packageStartupMessage("# Type 'help(BGLR)' for summary information",appendLF=TRUE)
   }
   invisible()
 }
@@ -944,18 +1018,15 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     nGroups=1
     if(!is.null(groups))
     {
-	if(!is.factor(groups))
-	{
-		stop("groups should be a factor!\n");
-	}else{
+		groups<-as.character(groups)  #Groups as character and then as factor to avoid dummy levels
+		groups<-as.factor(groups)
 		#Number of records by group
 		countGroups=table(groups)
 		nGroups=length(countGroups)
 		groupLabels=names(countGroups)
                 groups=as.integer(groups)
                 ggg=as.integer(groups-1);  #In C we begin to count in 0
-		if(sum(countGroups)!=n) stop("length of groups and y differs, NA's not allowed in groups\n");
-	}
+		if(sum(countGroups)!=n) stop("length of groups and y differs, NA's not allowed in groups\n");	
     }
 
     if(response_type=="ordinal")
@@ -1110,13 +1181,13 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
             ETA[[i]] = switch(ETA[[i]]$model, 
 			      FIXED = setLT.Fixed(LT = ETA[[i]],  n = n, j = i, weights = weights, y = y, nLT = nLT, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups), 
-                              BRR = setLT.BRR(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups), 
-                              BL = setLT.BL(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
-                              RKHS = setLT.RKHS(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles), 
-                              BayesC = setLT.BayesBandC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups),
-                              BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles),
-                              BayesB = setLT.BayesBandC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups),
-                              BRR_windows = setLT.BRR_windows(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles)
+                              BRR = setLT.BRR(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups,verbose=verbose), 
+                              BL = setLT.BL(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,verbose=verbose), 
+                              RKHS = setLT.RKHS(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,verbose=verbose), 
+                              BayesC = setLT.BayesBandC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups,verbose=verbose),
+                              BayesA = setLT.BayesA(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,verbose=verbose),
+                              BayesB = setLT.BayesBandC(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,groups=groups,nGroups=nGroups,verbose=verbose),
+                              BRR_windows = setLT.BRR_windows(LT = ETA[[i]], n = n, j = i, weights = weights, y = y, nLT = nLT, R2 = R2, saveAt = saveAt, rmExistingFiles = rmExistingFiles,verbose=verbose)
                               )
         }
     }
@@ -1438,7 +1509,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
                 for (j in 1:nLT) {
 
                   if (ETA[[j]]$model == "FIXED") {
-                    write(ETA[[j]]$b, file = ETA[[j]]$fileOut, append = TRUE)
+                    write(ETA[[j]]$b,ncolumns=ETA[[j]]$p, file = ETA[[j]]$fileOut, append = TRUE)
                   }
 
                   if (ETA[[j]]$model == "BRR") {
@@ -1473,7 +1544,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
 
             #Output files
             write(x = mu, file = fileOutMu, append = TRUE)
-            write(x = varE, file = fileOutVarE, append = TRUE)
+            write(x = varE, ncolumns=nGroups,file = fileOutVarE, append = TRUE)
             if (i > burnIn) {
                 nSums = nSums + 1
                 k = (nSums - 1)/(nSums)
@@ -1755,6 +1826,7 @@ BGLR=function (y, response_type = "gaussian", a = NULL, b = NULL,
     return(out)
 }
 
+ #fm<-BGLR(y=y,ETA=list(list(X=X,model='FIXED')))
 
 #This function will be a wrapper for BGLR
 #the idea is to maintain the compatibility with the function BLR in 
